@@ -132,6 +132,16 @@ git remote add origin git@github.com:RPFey/<repository name>.git
 
 这里 origin 是远程库的名字，可以自己修改
 
+
+
+也可以将origin 删除（解除关联）
+
+```
+git remote rm origin
+```
+
+
+
 ```
 git push -u origin master
 ```
