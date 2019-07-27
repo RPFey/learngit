@@ -162,6 +162,17 @@ git push -u origin master
 
 切换分支：`git checkout <name>`
 
+切换分支时要求当前工作区内的修改必须提交，也可以用
+
+```
+git stash  保存当前工作区后可以切换分支
+处理完切换回来后，采用：
+git stash pop 
+或者, 例如
+git stash apply stash@{0} /* 需要 git stash list 查看*/ 
+git stash drop 
+```
+
 创建+切换分支：`git checkout -b <name>`
 
 合并某分支到当前分支：`git merge <name>`
