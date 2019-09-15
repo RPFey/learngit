@@ -1,0 +1,3 @@
+[submodule "rm-oprncv-py"]
+	path = rm-oprncv-py
+	url = ./learn opencv/rm-oprncv-py
