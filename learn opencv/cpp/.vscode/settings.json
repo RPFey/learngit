@@ -58,6 +58,14 @@
         "set": "cpp",
         "string": "cpp",
         "cfenv": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "csignal": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "codecvt": "cpp",
+        "unordered_set": "cpp",
+        "random": "cpp",
+        "typeindex": "cpp",
+        "valarray": "cpp"
     }
 }
