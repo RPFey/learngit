@@ -150,6 +150,18 @@ git push -u origin master
 
 -u 是个参数
 
+如果报错 ：
+
+sign_and_send_pubkey: signing failed: agent refused operation
+
+说明生成的 key 没有附加到 ssh-agent 上
+
+采用 
+
+eval "$(ssh-agent -s)"
+
+ssh-add
+
 ## 分支
 
 ![git-br-dev-fd](/home/peter/图片/0)
