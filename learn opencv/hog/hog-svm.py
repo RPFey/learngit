@@ -46,25 +46,33 @@ def load_data_set(logger):
     logger.info('Current path is:{}'.format(pwd))
 
     # 提取正样本
-    pos_dir = os.path.join(pwd, 'Positive')
-    if os.path.exists(pos_dir):
-        logger.info('Positive data path is:{}'.format(pos_dir))
-        pos = os.listdir(pos_dir)
-        logger.info('Positive samples number:{}'.format(len(pos)))
+    # armor 5
+    pos5_dir = os.path.join(pwd, 'pos5')
+    if os.path.exists(pos5_dir):
+        logger.info('pos1 data path is:{}'.format(pos5_dir))
+        pos5 = os.listdir(pos5_dir)
+        logger.info('pos1 samples number:{}'.format(len(pos5)))
+
+    # # armor 2
+    # pos2_dir = os.path.join(pwd, 'pos2')
+    # if os.path.exists(pos2_dir):
+    #     logger.info('pos2 data path is:{}'.format(pos2_dir))
+    #     pos2 = os.listdir(pos2_dir)
+    #     logger.info('pos2 samples number:{}'.format(len(pos2)))
 
     # 提取负样本
-    neg_dir = os.path.join(pwd, 'Negative')
+    neg_dir = os.path.join(pwd, 'neg')
     if os.path.exists(neg_dir):
         logger.info('Negative data path is:{}'.format(neg_dir))
         neg = os.listdir(neg_dir)
         logger.info('Negative samples number:{}'.format(len(neg)))
 
     # 提取测试集
-    test_dir = os.path.join(pwd, 'TestData')
-    if os.path.exists(test_dir):
-        logger.info('Test data path is:{}'.format(test_dir))
-        test = os.listdir(test_dir)
-        logger.info('Test samples number:{}'.format(len(test)))
+    # test_dir = os.path.join(pwd, 'TestData')
+    # if os.path.exists(test_dir):
+    #     logger.info('Test data path is:{}'.format(test_dir))
+    #     test = os.listdir(test_dir)
+    #     logger.info('Test samples number:{}'.format(len(test)))
 
     return pos, neg, test
 
@@ -77,7 +85,7 @@ def load_train_samples(pos, neg):
     :return labels: 对应训练样本的标签列表
     '''
     pwd = os.getcwd()
-    pos_dir = os.path.join(pwd, 'Positive')
+    pos_dir = os.path.join(pwd, 'pos5')
     neg_dir = os.path.join(pwd, 'Negative')
 
     samples = []
@@ -115,7 +123,7 @@ def extract_hog(samples, logger):
     for f in samples:
         num += 1.
         logger.info('Processing {} {:2.1f}%'.format(f, num/total*100))
-        hog = cv2.HOGDescriptor((64,128), (16,16), (8,8), (8,8), 9)
+        hog = cv2.HOGDescriptor((64, 128), (16, 16), (8, 8), (8, 8), 9)
         # hog = cv2.HOGDescriptor()
         img = cv2.imread(f, -1)
         img = cv2.resize(img, (64,128))
@@ -171,7 +179,7 @@ def train_svm(train, labels, logger):
 
     return get_svm_detector(svm)
 
-def test_hog_detect(test, svm_detector, logger):
+def test_hog_detect():
     '''
     导入测试集，测试结果
     :param test: 测试数据集
@@ -180,32 +188,35 @@ def test_hog_detect(test, svm_detector, logger):
     :return: 无
     '''
     hog = cv2.HOGDescriptor()
-    hog.setSVMDetector(svm_detector)
+    # hog.setSVMDetector(svm_detector)
     # opencv自带的训练好了的分类器
-    # hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-    pwd = os.getcwd()
-    test_dir = os.path.join(pwd, 'TestData')
+    hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+    video = cv2.VideoCapture("5armor1.mkv")
     cv2.namedWindow('Detect')
-    for f in test:
-        file_path = os.path.join(test_dir, f)
-        logger.info('Processing {}'.format(file_path))
-        img = cv2.imread(file_path)
-        rects, _ = hog.detectMultiScale(img, winStride=(4,4), padding=(8,8), scale=1.05)
+    while True :
+        _, frame = video.read()
+        if frame is None :
+            break
+        rects, other = hog.detectMultiScale(frame, winStride=(4,4), padding=(8,8), scale=1.05)
         for (x,y,w,h) in rects:
-            cv2.rectangle(img, (x,y), (x+w,y+h), (0,0,255), 2)
-        cv2.imshow('Detect', img)
-        c = cv2.waitKey(0) & 0xff
+            cv2.rectangle(frame, (x,y), (x+w,y+h), (0,0,255), 2)
+        cv2.imshow('Detect', frame)
+        c = cv2.waitKey(30) & 0xff
         if c == 27:
             break
+
     cv2.destroyAllWindows()
+    video.release()
+
 
 
 if __name__ == '__main__':
-    logger = logger_init()
-    pos, neg, test = load_data_set(logger=logger)
-    samples, labels = load_train_samples(pos, neg)
-    train = extract_hog(samples, logger=logger)
-    logger.info('Size of feature vectors of samples: {}'.format(train.shape))
-    logger.info('Size of labels of samples: {}'.format(labels.shape))
-    svm_detector = train_svm(train, labels, logger=logger)
-    test_hog_detect(test, svm_detector, logger)
+    test_hog_detect()
+    # logger = logger_init()
+    # pos, neg, test = load_data_set(logger=logger)
+    # samples, labels = load_train_samples(pos, neg)
+    # train = extract_hog(samples, logger=logger)
+    # logger.info('Size of feature vectors of samples: {}'.format(train.shape))
+    # logger.info('Size of labels of samples: {}'.format(labels.shape))
+    # svm_detector = train_svm(train, labels, logger=logger)
+    # test_hog_detect(test, svm_detector, logger)
