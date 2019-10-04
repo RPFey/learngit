@@ -132,6 +132,16 @@ git remote add origin git@github.com:RPFey/<repository name>.git
 
 这里 origin 是远程库的名字，可以自己修改
 
+
+
+也可以将origin 删除（解除关联）
+
+```
+git remote rm origin
+```
+
+
+
 ```
 git push -u origin master
 ```
@@ -163,6 +173,17 @@ ssh-add
 创建分支：`git branch <name>`
 
 切换分支：`git checkout <name>`
+
+切换分支时要求当前工作区内的修改必须提交，也可以用
+
+```
+git stash  保存当前工作区后可以切换分支
+处理完切换回来后，采用：
+git stash pop 
+或者, 例如
+git stash apply stash@{0} /* 需要 git stash list 查看*/ 
+git stash drop 
+```
 
 创建+切换分支：`git checkout -b <name>`
 

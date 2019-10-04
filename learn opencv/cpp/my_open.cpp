@@ -7,18 +7,24 @@ using namespace std;
 using namespace cv;
 
 int main(){
-    Mat_<Vec3b> image;
-    Mat img_gry,img_canny;
-    image = imread("DJI_0210.JPG");
-    cout<<"column: "<<image.cols<<endl;
-    cout<<"row: "<<image.rows<<endl;
-    pyrDown(image,image);
-    // Mat kernel_x = (Mat_<int>(3, 3) << -1, 0, 1, -2, 0, 2, -1, 0, 1); // 定义卷积核
-    cvtColor(image,img_gry,COLOR_BGR2GRAY);
-    Canny(img_gry,img_canny,10,100,3,true);
-    imshow("cann",img_canny);
+    Mat image=imread("DJI_0210.JPG");
+    cvtColor(image,image,COLOR_BGR2GRAY);
+
+    if(image.empty()){
+        cout<<"can't open";
+        return -1;
+    }
+    Mat border;
+    // int y = image.cols;
+    // int x = image.rows;
+    // int padding = abs(x-y)/2;
+    // if (x<y){
+    //     copyMakeBorder(image,border,padding,padding,0,0,BORDER_WRAP);
+    // }else{
+    //     copyMakeBorder(image,border,0,0,padding,padding,BORDER_WRAP);
+    // }
+    namedWindow("border",WINDOW_AUTOSIZE);
+    imshow("border",image);
     waitKey(0);
-    destroyWindow("cann");
-    
     return 0;
 }
