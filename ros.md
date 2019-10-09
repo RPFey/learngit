@@ -1,4 +1,57 @@
+# ENV
+
+## to eclipse 
+
+catkin_make --force-cmake -G"Eclipse CDT4 - Unix Makefiles" DCMAKE_VUILD_TYPE=Debug -DCMAKE_ECLIPSE_MAKE_ARGUMENTS=-j8
+
+## python-interpreter
+
+指定解释器后会与ros 原有的解释器的 site-packages 路径冲突，因此在 导入一些外部包之前，
+
+```python
+import sys
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+import cv2
+```
+
+在执行.py 文件之前，需要
+
+chmod +x *.py
+
+touch *.py
+
+在 Cmakelist.txt 中 ：
+
+```
+catkin_install_python(PROGRAMS
+   py/hog-svm.py
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
+```
+
+就可以直接rosrun pkg *.py 了
+
+### 指定解释器
+
+在虚拟环境下安装 
+
+pip install catkin-tools rospkg rospy 
+
+在执行 rosrun 之前激活这个环境
+
+在 *.py  第一行：
+
+#!/usr/bin/env python3
+
+
+
 # ROS
+
+## 主要命令 
+
+rospack / rosnode / rosmsg / rosservice / rosmsg / rossrv / rosparam
+
+
 
 catkin_make 之后 要 source ./devel/setup.bash
 
@@ -32,7 +85,7 @@ rosls [package_name] # 列出pkg 下的文件信息
 
 rosed [package_name] [file_name] # 编辑包下文件
 
-catkin_create_package <package_name> [deps]
+catkin_create_pkg <package_name> [deps]
 deps std_msgs nav_msgs # 具体 msg 在 rosmsg list 中查看
 
 rosdep install [package_name]  # 安装依赖  clone 下的pkg 需要安装， 由 package.xml 指导
@@ -52,4 +105,142 @@ master ,node 启动时向 master 申请， master  管理通信
 
 ## node
 
-launch 会自动 
+launch 会自动 启动 roscore
+
+
+
+## topic 
+
+异步通信
+
+massage 是topic 的内容，相当于一个类，而发布的消息相当于一个对象。定义在 .msg 文件中
+
+rostopic pub 发布消息时， 若遇到消息中的变量赋值
+
+则 x: 0.0 冒号后面空一格， 感觉像是字典构建
+
+而 1:2:3 则不需要空格 (yaml 格式)
+
+
+
+## service
+
+‘’相当于间断的发布消息‘’
+
+request - reply 模型
+
+client 发布消息后， 会在原地等待 service , 远程过程调用 （PPC）服务器端服务，调用另一个node的函数
+
+service 定义 ：
+
+... 
+
+[request msg]
+
+/ -----
+
+....
+
+[reply msg]
+
+rossrv show [ rosservice info 下 type 后的类型]
+
+rosservice call [service-name] "param: value"
+
+
+
+## parameter server
+
+存储参数字典 ， 存储配置
+
+rosparam 查看
+
+launch 文件中：
+
+param name="..." value="..."
+
+param name='....' command="...[执行文件] ...[参数文件]"
+
+可执行文件得到参数文件作为参数后返回的值作为 param 的值
+
+rosparam file="..."  command="load" 加载文件作为参数
+
+
+
+## .launch file
+
+in ros wiki roslaunch/XML
+
+
+
+## tf& URDF
+
+ros 中的坐标变换标准 ，树状 tree
+
+机器人各个关节处有坐标系（frame） ,  每个之间有关系， 形成树状结构
+
+tf tree 之间必须保持联通。broadcaster 向关系中发布消息，确定关系，
+
+### Transformstamped.msg
+
+指定从 frame_id -> child_frame_id 的变换
+
+### tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
+
+为上一数据结构的数组 
+
+
+
+c++ 直接 sendTransform 发 vector 与 单个都可以
+
+lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧的
+
+## slam
+
+AMCL 定位
+
+Naviagtion 导航，包括路径规划算法。
+
+nav_msgs/OccupancyGrid :
+
+frame_id 绑定在 map frame上 ， resolution 代表一个像素点在实际中的距离
+
+frame 中 data 直接是把图片压成一维了， width*height
+
+
+
+### OccupancyGrid
+
+上面的数值代表存在障碍物的概率
+
+ ### ros&opencv
+
+ros 中的cvImage
+
+```c++
+namespace cv_bridge {
+   
+   class CvImage
+   {
+   public:
+     std_msgs::Header header;
+     std::string encoding;
+     cv::Mat image;
+   };
+   
+   typedef boost::shared_ptr<CvImage> CvImagePtr;
+   typedef boost::shared_ptr<CvImage const> CvImageConstPtr;
+   
+  }
+```
+
+也就是将 ros 中的数据格式与 Mat 相互转化
+
+# ROSPY&ROSCPP
+
+## rospy
+
+publisher 初始化时， 设置queue_size 为较小整数， None 表示同步通信
+
+
+
