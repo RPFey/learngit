@@ -27,6 +27,9 @@ catkin_install_python(PROGRAMS
    py/hog-svm.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
+ 
+ catkin_python_setup() 
+ # 如果提供了python 模块 （包含 setup.py） 加上。
 ```
 
 就可以直接rosrun pkg *.py 了
@@ -43,6 +46,48 @@ pip install catkin-tools rospkg rospy
 
 #!/usr/bin/env python3
 
+## 消息传输
+
+使用 numpy 传输时，遵循下列方法
+
+```python
+# publish or client node
+msg.data = data.tostring()
+
+# service or subscirber node
+data = res.data.fromstring()
+data = np.reshape(data, (..,..))
+```
+
+自定义的 msg/srv 在生成的 dist-package 中会有类型，可以自己看看
+
+
+
+消息引用：
+
+```python
+import sensor_msgs
+
+img_msgs = sensor_msgs.msgs.Image()
+# 一般是作为一个类，类中属性的名称与 msg 一致
+```
+
+
+
+## problem
+
+编译时报错： /usr/bin/env 'python\r'
+
+这是由于文件在 windows 系统中重新编码过， 在linux 中多了一个 \r 
+
+最好的方法就是直接从 github 上 clone
+
+或者在命令行输入 :%s/^M//%g
+
+
+
+PYTHONPATH 中一定要有指向系统 python2.7 dist-packages 的路径，否则会因为导入的 yaml 包不同而产生问题。（/usr/local/bin/python2.7/dist-packages）
+
 
 
 # ROS
@@ -50,8 +95,6 @@ pip install catkin-tools rospkg rospy
 ## 主要命令 
 
 rospack / rosnode / rosmsg / rosservice / rosmsg / rossrv / rosparam
-
-
 
 catkin_make 之后 要 source ./devel/setup.bash
 
@@ -146,6 +189,25 @@ service 定义 ：
 rossrv show [ rosservice info 下 type 后的类型]
 
 rosservice call [service-name] "param: value"
+
+
+
+## implementation
+
+通过 gencpp,genpy 生成指定的文件，方便调用。
+
+在 CmakeList.txt 中： 
+
+```
+add_message_files(...)
+add_service_files(...)
+..
+
+generate_messages()
+
+# 必须在 caikin_package 之前调用, catkin_package 的 CATKIN_DEPENDS 后加上 message_runtime
+# 必须在 find_package 中找 message_generation, 且在 package.xml 中加上编译依赖与运行依赖。
+```
 
 
 
