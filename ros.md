@@ -235,7 +235,7 @@ in ros wiki roslaunch/XML
 
 
 
-## tf& URDF
+## tf& URDF（unified robot description format）
 
 ros 中的坐标变换标准 ，树状 tree
 
@@ -243,23 +243,39 @@ ros 中的坐标变换标准 ，树状 tree
 
 tf tree 之间必须保持联通。broadcaster 向关系中发布消息，确定关系，
 
+/tf 下有多个节点发送消息
+
 ### Transformstamped.msg
 
-指定从 frame_id -> child_frame_id 的变换
+指定从 frame_id -> child_frame_id 的变换 
 
 ### tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
 
 为上一数据结构的数组 
 
-
-
 c++ 直接 sendTransform 发 vector 与 单个都可以
 
 lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧的
 
+### urdf 
+
+.udrf  描述机器人
+
+link 部件/ joint 关节（link 连接关系）
+
+link :
+
+inertial/ visual/ collision
+
+joint : 父子节点，变换关系
+
 ## slam
 
 AMCL 定位
+
+odometry 定位，
+
+
 
 Naviagtion 导航，包括路径规划算法。
 
@@ -269,11 +285,41 @@ frame_id 绑定在 map frame上 ， resolution 代表一个像素点在实际中
 
 frame 中 data 直接是把图片压成一维了， width*height
 
-
-
-### OccupancyGrid
+### OccupancyGrid.msg
 
 上面的数值代表存在障碍物的概率
+
+
+
+
+
+### Navigation
+
+move_base 中心节点， 中间的插件只需要指定算法即可
+
+外界代表需要提供的信息： /tf   /odom  /map  /sensor
+
+输出： cmd_vel 
+
+move_base :
+
+全局规划， 只考虑地图上静态的障碍物（已知）； 局部规划： 动态； recovery: 处理异常
+
+需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )
+
+
+
+costmap  (插件)
+
+两张： （global/local） ;  
+
+static layer : 订阅map topic ; obstacle layer : 动态添加  ; inflation layer : 膨胀障碍物，确定机器人安全范围 
+
+Mapserver 直接提供建好的地图。
+
+my_map.yaml 表示地图的参数， *.pgm 保存地图 
+
+
 
  ### ros&opencv
 
