@@ -14,8 +14,6 @@ Variable 维护状态
 
 
 
-
-
 eg.  y = a+b   只会生成一张图，而不会得到结果
 
 构建会话后才会执行计算，也就是操作产生的影响只会在 sess.run(op) 之后才会产生
@@ -64,6 +62,8 @@ sess.run([op1,op2,...])
 
 v=tf.placeholder(dtype= ... , shape=(...))  元组形式指明维度
 
+维度可以用None 表示任意大小
+
 在 sess.run(op, feed_dict={<variable_name>:  <value_>}) 执行赋值并计算。 可以直接用 ndarray 。
 
 # logistic regression
@@ -79,6 +79,12 @@ train = optimizer.minimize(loss)
 with tf.Session() as sess :
 
 ​	sess.run(train)
+
+主要的思想是先初始化变量（Variable）, 构建计算题（计算误差，训练）
+
+但是这里好像要自己构建 各个层的形状，参数。
+
+在会话中运行。
 
 # operation
 
