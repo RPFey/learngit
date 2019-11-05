@@ -33,6 +33,82 @@ endif()
 
 catkin_make --force-cmake -G"Eclipse CDT4 - Unix Makefiles" DCMAKE_VUILD_TYPE=Debug -DCMAKE_ECLIPSE_MAKE_ARGUMENTS=-j8
 
+## vscode
+
+安装ros 插件,  在命令行中用 ros:update c++ propertities
+
+编译时输入得到信息
+
+```bash
+catkin_make -DCMAKE_EXPORT_COMPILE_COMMANDS=Yes
+```
+
+c_cpp_properties:
+
+```json
+"compileCommands": "${workspaceFolder}/build/compile_commands.json"
+```
+
+会得到编译时的其它引用
+
+tasks.json:
+
+```json
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558 
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "catkin_make", //代表提示的描述性信息, 或者说这个task 的名字
+            "type": "shell",  //可以选择shell或者process,如果是shell代码是在shell里面运行一个命令，如果是process代表作为一个进程来运行
+            "command": "catkin_make -DCMAKE_BUILD_TYPE=Debug",//这个是我们需要运行的命令，在bash 中
+            "args": [],//如果需要在命令后面加一些后缀，可以写在这里，比如-DCATKIN_WHITELIST_PACKAGES=“pac1;pac2”
+            "group": {"kind":"build","isDefault":true},
+            "presentation": {
+                "reveal": "always"//可选always或者silence，代表是否输出信息
+            },
+            "problemMatcher": "$catkin-gcc"
+        }
+    ]
+}
+```
+
+launch.json:
+
+```json
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [ 
+        {
+            "name": "(gdb) Launch",　　 // 配置名称，将会在调试配置下拉列表中显示
+            "type": "cppdbg",　　　// 调试器类型 该值自动生成
+            "request": "launch",　　 // 调试方式,还可以选择attach
+            "program": "${workspaceFolder}/devel/lib/rosopencv/svm",　　//要调试的程序（完整路径，支持相对路径）
+            "args": [],　// 传递给上面程序的参数，没有参数留空即可
+            "stopAtEntry": false,　// 是否停在程序入口点（停在main函数开始）
+            "cwd": "${workspaceFolder}",　// 调试程序时的工作目录
+            "environment": [],//针对调试的程序，要添加到环境中的环境变量. 例如: [ { "name": "squid", "value": "clam" } ]
+            "externalConsole": false, //如果设置为true，则为应用程序启动外部控制台。 如果为false，则不会启动控制台，并使用VS Code的内置调试控制台。
+            "MIMode": "gdb",　 // VSCode要使用的调试工具
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "catkin_make", ///////// 这个重要，需要与task中的label相同, 执行task
+        }
+    ]
+}
+```
+
+
+
 ## python-interpreter
 
 指定解释器后会与ros 原有的解释器的 site-packages 路径冲突，因此在 导入一些外部包之前，
