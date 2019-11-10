@@ -338,17 +338,29 @@ rosparam file="..."  command="load" 加载文件作为参数
 
 in ros wiki roslaunch/XML
 
+rosparam file = "..../ .. .yaml" command="load" 从其余配置文件导入参数
 
+一般在
+
+```xml
+<node .. >
+<rosparam file="..." coommand="...">
+</node>
+```
+
+即可向节点中传入参数
 
 ## tf& URDF（unified robot description format）
 
-ros 中的坐标变换标准 ，树状 tree
+ros 中的坐标变换标准 ，树状 tree, 使得不同sensor 得到的数据坐标能转换到同一坐标系下
 
 机器人各个关节处有坐标系（frame） ,  每个之间有关系， 形成树状结构
 
 tf tree 之间必须保持联通。broadcaster 向关系中发布消息，确定关系，
 
 /tf 下有多个节点发送消息
+
+eg. base_link to lidar 
 
 ### Transformstamped.msg
 
@@ -376,9 +388,39 @@ joint : 父子节点，变换关系
 
 ## slam
 
-AMCL 定位
-
 odometry 定位，
+
+##  mapping
+
+采用 gmapping 构建导航图，在rviz 中得到导航地图， ROS-Academy 中slam 有 gmapping launch 
+
+rosrun map_server map_saver -f mymap 保存生成的地图 
+
+gmapping 订阅雷达数据和坐标（tf）并发布到 /map 话题上， 
+
+OccupancyGrid.msg
+
+上面的数值代表存在障碍物的概率， 0 free; 1 obstacle
+
+map_server 生成 static_map 不能修改
+
+tf 要求： laser -> base_link -> odom
+
+configure parameters:
+
+ maxUrange : max usable data of range from lidar
+
+minimumScore : ? 
+
+
+
+### localization 
+
+AMCL 定位；  蒙特卡洛定位
+
+先预先生成随机的位姿，通过机器人的移动，滤去不可能的位姿。
+
+
 
 
 
@@ -390,7 +432,7 @@ frame_id 绑定在 map frame上 ， resolution 代表一个像素点在实际中
 
 frame 中 data 直接是把图片压成一维了， width*height
 
-### OccupancyGrid.msg
+OccupancyGrid.msg
 
 上面的数值代表存在障碍物的概率
 
