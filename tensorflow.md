@@ -16,7 +16,8 @@ Variable 维护状态
 
 eg.  y = a+b   只会生成一张图，而不会得到结果
 
-构建会话后才会执行计算，也就是操作产生的影响只会在 sess.run(op) 之后才会产生
+构建会话后才会执行计算，也就是操作产生的影响只会在 sess.run(op) 之后才会产生；比
+较坑的地方在于只能获得最后一步的结果，看不到中间的结果。
 
 with tf.Session() as sess :
 
@@ -66,6 +67,10 @@ v=tf.placeholder(dtype= ... , shape=(...))  元组形式指明维度
 
 在 sess.run(op, feed_dict={<variable_name>:  <value_>}) 执行赋值并计算。 可以直接用 ndarray 。
 
+常用方法： 最开始用 placeholder 设置输入数据格式， 最后用 sess.run() 放入数据
+
+
+
 # logistic regression
 
 least-square :
@@ -91,4 +96,12 @@ with tf.Session() as sess :
 ## matrix
 
 matmul(a,b) 矩阵乘法
+
+## tensor operation
+
+tf.equal 判断元素是否相等， 返回布尔类型tensor
+
+tf.cast(.. , dtype) 转变类型
+
+tf.reduce_mean(..) 获得平均值
 
