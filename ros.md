@@ -390,7 +390,7 @@ joint : 父子节点，变换关系
 
 odometry 定位，
 
-##  mapping
+### mapping
 
 采用 gmapping 构建导航图，在rviz 中得到导航地图， ROS-Academy 中slam 有 gmapping launch 
 
@@ -422,7 +422,7 @@ AMCL 定位；  蒙特卡洛定位
 
 
 
-
+### path planner
 
 Naviagtion 导航，包括路径规划算法。
 
@@ -432,17 +432,19 @@ frame_id 绑定在 map frame上 ， resolution 代表一个像素点在实际中
 
 frame 中 data 直接是把图片压成一维了， width*height
 
-OccupancyGrid.msg
+\1. 重新定位机器人， 2D pose estimation
 
-上面的数值代表存在障碍物的概率
-
-
+\2. set 2D nav goal 
 
 
 
-### Navigation
+Navigation
 
-move_base 中心节点， 中间的插件只需要指定算法即可
+move_base 中心节点， 中间的插件只需要指定算法即可 :
+
+move_base 实际上是一个 action_server, 接受goal pose, 所以用 rviz 设置2D nav goal 实际上是发布了一条消息。
+
+话题是 /move_base/goal, 通过发布来控制机器人。
 
 外界代表需要提供的信息： /tf   /odom  /map  /sensor
 
