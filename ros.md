@@ -362,11 +362,21 @@ rosparam file="..."  command="load" 加载文件作为参数
 
 in ros wiki roslaunch/XML
 
+rosparam file = "..../ .. .yaml" command="load" 从其余配置文件导入参数
 
+一般在
+
+```xml
+<node .. >
+<rosparam file="..." coommand="...">
+</node>
+```
+
+即可向节点中传入参数
 
 ## tf& URDF（unified robot description format）
 
-ros 中的坐标变换标准 ，树状 tree
+ros 中的坐标变换标准 ，树状 tree, 使得不同sensor 得到的数据坐标能转换到同一坐标系下
 
 机器人各个关节处有坐标系（frame） ,  每个之间有关系， 形成树状结构
 
@@ -374,11 +384,13 @@ tf tree 之间必须保持联通。broadcaster 向关系中发布消息，确定
 
 /tf 下有多个节点发送消息
 
-### Transformstamped.msg
+eg. base_link to lidar 
+
+Transformstamped.msg
 
 指定从 frame_id -> child_frame_id 的变换 
 
-### tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
+tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
 
 为上一数据结构的数组 
 
@@ -402,11 +414,39 @@ joint : 父子节点，变换关系
 
 AMCL 定位 2D 概率定位系统 采用激光雷达等定位
 
+### mapping
+
+采用 gmapping 构建导航图，在rviz 中得到导航地图， ROS-Academy 中slam 有 gmapping launch 
+
+rosrun map_server map_saver -f mymap 保存生成的地图 
+
+gmapping 订阅雷达数据和坐标（tf）并发布到 /map 话题上， 
+
+OccupancyGrid.msg
+
+上面的数值代表存在障碍物的概率， 0 free; 1 obstacle
+
+map_server 生成 static_map 不能修改
+
+tf 要求： laser -> base_link -> odom
+
+configure parameters:
+
+ maxUrange : max usable data of range from lidar
+
+minimumScore : ? 
 
 
-odometry 定位，
+
+### localization 
+
+AMCL 定位；  蒙特卡洛定位
+
+先预先生成随机的位姿，通过机器人的移动，滤去不可能的位姿。
 
 
+
+### path planner
 
 Naviagtion 导航，包括路径规划算法。
 
@@ -416,28 +456,19 @@ frame_id 绑定在 map frame上 ， resolution 代表一个像素点在实际中
 
 frame 中 data 直接是把图片压成一维了， width*height
 
-### OccupancyGrid.msg
+\1. 重新定位机器人， 2D pose estimation
 
-上面的数值代表存在障碍物的概率
-
-
+\2. set 2D nav goal 
 
 
 
-### Navigation
+Navigation
 
-map_server 使用
+move_base 中心节点， 中间的插件只需要指定算法即可 :
 
-```xml
-<arg name="map_file" default="$(find slam_sim_demo)/maps/Software_Museum.yaml"/>
-<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
-```
+move_base 实际上是一个 action_server, 接受goal pose, 所以用 rviz 设置2D nav goal 实际上是发布了一条消息。
 
-传入描述地图文件即可， .yaml 中含有地图图片的文件名
-
-
-
-move_base 中心节点， 中间的插件只需要指定算法即可
+话题是 /move_base/goal, 通过发布来控制机器人。
 
 外界代表需要提供的信息： /tf   /odom  /map  /sensor
 
