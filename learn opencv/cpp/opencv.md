@@ -223,6 +223,10 @@ image(j,i) = 100;
 
 # 图像变换
 
+## gamma 矫正
+
+
+
 ## 图像混合
 
 ```c++
@@ -237,14 +241,6 @@ addWeighted(inputArray src1,
 可以用这个函数做矩阵的加法。（不过直接相加也可以，为什么用这个函数？对数乘也重定义了的。）
 
 而且超过255就是255，没有溢出。
-
-## template match
-
-```
-match
-```
-
-
 
 ## harris corner detctor
 

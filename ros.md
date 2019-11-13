@@ -241,6 +241,16 @@ rosdep install [package_name]  # 安装依赖  clone 下的pkg 需要安装， �
 rospack list | grep [...] # 可以过滤字符串
 ```
 
+
+
+不同package 之间引用，需要其余包的message, 源文件之类的。
+
+这都需要 find_package (... )
+
+对于前者，include (${catkin_INCLUDE_DIR}) 可以引用生成的message 头文件， 
+
+对于后者， 可以在前者包中生成库文件(.so)，然后引用即可 
+
 ## metapackage
 
 虚包， linux 软件包管理，底层软件系统。组合软件包。
@@ -255,7 +265,11 @@ master ,node 启动时向 master 申请， master  管理通信
 
 launch 会自动 启动 roscore
 
+这里提一下多线程，有时发布数据较快而处理较慢，导致遗漏数据，可以考虑采用多线程，把数据缓存再处理。
 
+单线程会将数据放入缓冲区，而如果之前缓冲区过长，导致数据长时间不能更新。
+
+nh.param(name , value, default)  This method tries to retrieve the indicated parameter value from the parameter server, storing the result in param_val. If the value cannot be retrieved from the server, default_val is used instead.
 
 ## topic 
 
@@ -334,6 +348,16 @@ rosparam file="..."  command="load" 加载文件作为参数
 
 
 
+还有一个namespace 的概念 ：
+
+节点和话题都有自己的命名空间，一般情况下都在所在命名空间中进行通信， 还有对应的参数（和C++ 很像）
+
+一般作为命令行参数传入 ：
+
+\__name:= ...     ;  __ns:=.....
+
+而 ros::NodeHandle nh('~') 代表私有的命名空间
+
 ## .launch file
 
 in ros wiki roslaunch/XML
@@ -376,7 +400,9 @@ joint : 父子节点，变换关系
 
 ## slam
 
-AMCL 定位
+AMCL 定位 2D 概率定位系统 采用激光雷达等定位
+
+
 
 odometry 定位，
 
@@ -399,6 +425,17 @@ frame 中 data 直接是把图片压成一维了， width*height
 
 
 ### Navigation
+
+map_server 使用
+
+```xml
+<arg name="map_file" default="$(find slam_sim_demo)/maps/Software_Museum.yaml"/>
+<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+```
+
+传入描述地图文件即可， .yaml 中含有地图图片的文件名
+
+
 
 move_base 中心节点， 中间的插件只需要指定算法即可
 
@@ -423,6 +460,10 @@ static layer : 订阅map topic ; obstacle layer : 动态添加  ; inflation laye
 Mapserver 直接提供建好的地图。
 
 my_map.yaml 表示地图的参数， *.pgm 保存地图 
+
+### procedure
+
+1. 检查数据接受是否正常
 
 
 
