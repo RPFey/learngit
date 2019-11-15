@@ -269,7 +269,7 @@ rostopic pub 发布消息时， 若遇到消息中的变量赋值
 
 而 1:2:3 则不需要空格 (yaml 格式)
 
-
+这里新加入使用socket 传输。ros 通信其实是用msg 类中的 serialize 方法将消息序列化，发送出去。接收端deserialize 恢复成原来格式。注意： 接收端的缓存空间！
 
 ## service
 
@@ -346,6 +346,7 @@ rosparam file = "..../ .. .yaml" command="load" 从其余配置文件导入参�
 <node .. >
 <rosparam file="..." coommand="...">
 </node>
+<include file="*.launch" /> launch 文件
 ```
 
 即可向节点中传入参数
@@ -362,19 +363,19 @@ tf tree 之间必须保持联通。broadcaster 向关系中发布消息，确定
 
 eg. base_link to lidar 
 
-### Transformstamped.msg
+Transformstamped.msg
 
 指定从 frame_id -> child_frame_id 的变换 
 
-### tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
+tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
 
 为上一数据结构的数组 
 
-c++ 直接 sendTransform 发 vector 与 单个都可以
+c++ 直接 send Transform 发 vector 与 单个都可以
 
 lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧的
 
-### urdf 
+## urdf 
 
 .udrf  描述机器人
 
@@ -410,7 +411,7 @@ configure parameters:
 
  maxUrange : max usable data of range from lidar
 
-minimumScore : ? 
+ minimumScore : ? 
 
 
 
@@ -426,9 +427,7 @@ AMCL 定位；  蒙特卡洛定位
 
 Naviagtion 导航，包括路径规划算法。
 
-nav_msgs/OccupancyGrid :
-
-frame_id 绑定在 map frame上 ， resolution 代表一个像素点在实际中的距离
+frame_id 绑定在 map 这个frame上 ， resolution 代表一个像素点在实际中的距离
 
 frame 中 data 直接是把图片压成一维了， width*height
 
@@ -436,37 +435,39 @@ frame 中 data 直接是把图片压成一维了， width*height
 
 \2. set 2D nav goal 
 
-
-
 Navigation
 
-move_base 中心节点， 中间的插件只需要指定算法即可 :
+move_base 中心节点， 中间的插件只需要指定算法即可。需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )。当move_base 接受到goal后会连接其它组件，最后发送/cmd_vel 
 
 move_base 实际上是一个 action_server, 接受goal pose, 所以用 rviz 设置2D nav goal 实际上是发布了一条消息。
 
-话题是 /move_base/goal, 通过发布来控制机器人。
+service : /make_plan 只提供路径，而不移动
+
+话题是 /move_base/goal, 通过发布来设定goal。
 
 外界代表需要提供的信息： /tf   /odom  /map  /sensor
 
-输出： cmd_vel 
-
-move_base :
-
 全局规划， 只考虑地图上静态的障碍物（已知）； 局部规划： 动态； recovery: 处理异常
 
-需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )
+parameter:  对nav_fn costmap planner 的参数
 
+controller_frequency : 控制向base_controller 发送消息的频率。 
 
+Tolerance parameters : 机器人的位姿与设定的位姿相差的允许值。
 
-costmap  (插件)
+sim_time : base_local_planner 估计路径的长短
 
-两张： （global/local） ;  
+costmap
 
-static layer : 订阅map topic ; obstacle layer : 动态添加  ; inflation layer : 膨胀障碍物，确定机器人安全范围 
+两张： （global/local） ;  global planner 采用static map 进行路径规划， 不会对sensor 的数据处理。有三层； 
 
-Mapserver 直接提供建好的地图。
+static layer : 订阅map topic ; obstacle layer : 动态添加，避障  ; inflation layer : 膨胀障碍物，确定机器人安全范围 
 
-my_map.yaml 表示地图的参数， *.pgm 保存地图 
+local planner 在运动中会执行避障操作，并达到目的地。local planner 有不同选择 
+
+base_local_planner : 随机选择一些允许的位移，并计算每条位移的结果。选择结果最好的。; bwa_local_planner , 
+
+navfn(extension) , A* 迪杰斯特拉 / carrot planner , 可以根据障碍物设定
 
 
 
