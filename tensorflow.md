@@ -47,7 +47,7 @@ with tf.Session() as sess:
 
 变量 和 op 有 name 参数，可以命名
 
-会话中赋值  tf.assign(a,b ) —— 将 b 赋值给 a , 且返回是一个 op
+会话中赋值  tf.assign(a,b) —— 将 b 赋值给 a , 且返回是一个 op
 
 update = tf.assign(a,b) 
 
@@ -69,27 +69,61 @@ v=tf.placeholder(dtype= ... , shape=(...))  元组形式指明维度
 
 常用方法： 最开始用 placeholder 设置输入数据格式， 最后用 sess.run() 放入数据
 
+## batch & mini_batch
 
+```python
+sess = tf.Session()
+sess.run(tf.initialize_all_variables())
+for i in range(batch_size) :
+    batch_x = ...
+    batch_y = ...
+    sess.run(train_step, freed_dict={... : batch_x, ...:batch_ys})
+```
 
-# logistic regression
+# loss function
+
+## optimizer 
+```python
+optimizer=tf.train.GradientDescent(0.2) --> learning rate
+train = optimizer.minimize(loss)
+with tf.Session() as sess :
+​	sess.run(train)
+```
+
+## logistic regression
 
 least-square :
 
+``` python
 loss  = tf.reduce_mean(tf.square(y_data-y))
-
-optimizer=tf.train.GradientDescent(0.2) --> learning rate
-
-train = optimizer.minimize(loss)
-
-with tf.Session() as sess :
-
-​	sess.run(train)
+```
 
 主要的思想是先初始化变量（Variable）, 构建计算题（计算误差，训练）
 
 但是这里好像要自己构建 各个层的形状，参数。
 
 在会话中运行。
+
+## softmax regression & cross entropy
+
+```python
+y = tf.nn.softmax(x) 
+```
+cross entropy :
+
+$H_{y'}(y) = -\sum(y_{i}'log(y_i))$
+
+$y_{i}' 为实际概率值而y_{i}为预测值$
+```python
+cross_entropy = -tf.reduce_sum(y_*tf.log(y))
+```
+
+
+# linear layer 
+
+```python
+W = tf.Variable(tf.zeros([.., ..])) # size shape
+```
 
 # operation
 

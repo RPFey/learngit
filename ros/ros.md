@@ -255,8 +255,6 @@ master ,node 启动时向 master 申请， master  管理通信
 
 launch 会自动 启动 roscore
 
-
-
 ## topic 
 
 异步通信
@@ -270,6 +268,8 @@ rostopic pub 发布消息时， 若遇到消息中的变量赋值
 而 1:2:3 则不需要空格 (yaml 格式)
 
 这里新加入使用socket 传输。ros 通信其实是用msg 类中的 serialize 方法将消息序列化，发送出去。接收端deserialize 恢复成原来格式。注意： 接收端的缓存空间！
+
+ros 中　float32[] 可以用　vector 接受。而float32[9] 要用boost::array 接受。具体见　./learn opencv/cpp/cpp.md 中boost 库详解
 
 ## service
 
@@ -349,6 +349,8 @@ rosparam file = "..../ .. .yaml" command="load" 从其余配置文件导入参�
 <include file="*.launch" /> launch 文件
 ```
 
+remap ：　可以映射不同的话题，　将原本订阅/发布的话题改变成另一个
+
 即可向节点中传入参数
 
 ## tf& URDF（unified robot description format）
@@ -377,6 +379,8 @@ lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧�
 
 ## urdf 
 
+具体文件在 robot_sim_demo 下的　urdf/ *.urdf.xacro 中，　可以看到各个　frame　之间的转换 
+
 .udrf  描述机器人
 
 link 部件/ joint 关节（link 连接关系）
@@ -397,9 +401,9 @@ odometry 定位，
 
 rosrun map_server map_saver -f mymap 保存生成的地图 
 
-gmapping 订阅雷达数据和坐标（tf）并发布到 /map 话题上， 
+gmapping 订阅雷达数据和坐标（tf）并发布到 /map 话题上， OccupancyGrid.msg
 
-OccupancyGrid.msg
+当出现　Messagefilter dropped 100% of messages　时，　问题在于 tf 树之间有问题，　订阅的消息没有确定的坐标转换关系。
 
 上面的数值代表存在障碍物的概率， 0 free; 1 obstacle
 
@@ -469,9 +473,15 @@ base_local_planner : 随机选择一些允许的位移，并计算每条位移�
 
 navfn(extension) , A* 迪杰斯特拉 / carrot planner , 可以根据障碍物设定
 
+### rtabmap
 
+rgb-d slam package
 
- ### ros&opencv
+### pointcloud_to_laserscan ＆　depthimage_to_laserscan
+
+convert pointcloud data to laser scan data　
+
+### ros&opencv
 
 ros 中的cvImage
 

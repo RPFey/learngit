@@ -1,3 +1,13 @@
+# Eigen 
+
+## with opencv 
+
+与opencv转换。
+```c++
+cv::cv2eigen(mat, m);
+cv::eigen2cv(m, mat);
+```
+
 # Ceres
 
 ## minimization
@@ -175,3 +185,4 @@ optimization options :
 options.linear_solver_type = ceres::DENSE_SCHUR;
 // alternatives : ceres::SPARSE_NORMAL_CHOLESKY for sparse matrix
 ```
+

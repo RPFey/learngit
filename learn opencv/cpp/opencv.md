@@ -557,6 +557,43 @@ hough circle transform 对噪声比较敏感， 先用中值滤波。
 
 对于圆，由于 x,y,theta 可以表示一个圆，变换后的圆空间就是3维。（可以用于弧线的检测）
 
+# 相机标定
+
+## 实际应用
+
+回答一个问题：
+
+为什么opencv 标定中将实际点的坐标　Z 全部设为　０, 而棋盘中各点的相邻长度都设为1。
+
+标定时得到的是实际的内参，这与外界坐标系的选取无关。由于内参矩阵(3,3)这个元素为１，保证了不同尺度下的唯一，改变的只是变换矩阵的大小。而当要知道实际物体的大小时，需要知道深度，换算为在相机坐标系中的坐标。
+
+## 棋盘标定
+
+主要在　board_size , 不计算最边上的一个角点。当没有找到与所给board_size 相同数量的角点时，findChessboardCorners 会返回０。
+
+```c++
+/* --- 相机中坐标获取 --- */
+Size image_size;  　　　　　　　　　　　/* 图像的尺寸 */
+Size board_size = Size(4,6);        /* 标定板上每行、列的角点数 */
+vector<Point2f> image_points_buf;   /* 缓存每幅图像上检测到的角点 */
+vector<vector<Point2f>> image_points_seq; /* 保存检测到的所有角点 */
+// 找到的点都是
+findChessboardCorners(imageInput,board_size,image_points_buf);
+// 在每一个角点周围　(11,11)　区域内搜寻更精确的角点。传入为灰度图像
+find4QuadCornerSubpix(view_gray,image_points_buf,Size(11,11)); 
+
+/* --- 实际坐标获取，并得到内参矩阵　--- */
+// 向　calibcamera 中传入的数据格式
+vector<vector<Point3f>> object_points; 
+vector<vector<Point2f>> image_points_seq;
+Mat cameraMatrix=Mat(3,3,CV_32FC1,Scalar::all(0)); /* 摄像机内参数矩阵 */
+vector<int> point_counts;  // 每幅图像中角点的数量
+Mat distCoeffs=Mat(1,5,CV_32FC1,Scalar::all(0)); /* 摄像机的5个畸变系数：k1,k2,p1,p2,k3 */
+vector<Mat> tvecsMat;  /* 每幅图像的旋转向量 */
+vector<Mat> rvecsMat; /* 每幅图像的平移向量 */
+calibrateCamera(object_points,image_points_seq,image_size,cameraMatrix,distCoeffs，rvecsMat,tvecsMat,0);
+```
+
 # C++ 讨论
 
 ## sort()
