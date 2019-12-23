@@ -33,3 +33,10 @@ snap changes
 abort <the progress number>
 ```
 
+# 后台管理 
+
+采用 nohup command & 
+
+重定向输出文件 ： 
+
+nohup python -u gcn_v2_lei/train.py >train.log 2>&1 &  (针对 python 而言， 重定向到 train.log )
