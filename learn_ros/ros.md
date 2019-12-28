@@ -166,8 +166,6 @@ data = np.reshape(data, (..,..))
 
 自定义的 msg/srv 在生成的 dist-package 中会有类型，可以自己看看
 
-
-
 消息引用：
 
 ```python
@@ -311,7 +309,7 @@ rosservice call [service-name] "param: value"
 
 
 
-## implementation
+### implementation
 
 通过 gencpp,genpy 生成指定的文件，方便调用。
 
@@ -374,7 +372,7 @@ rosparam file = "..../ .. .yaml" command="load" 从其余配置文件导入参�
 
 即可向节点中传入参数
 
-## tf& URDF（unified robot description format）
+## tf
 
 ros 中的坐标变换标准 ，树状 tree, 使得不同sensor 得到的数据坐标能转换到同一坐标系下
 
@@ -390,15 +388,38 @@ Transformstamped.msg
 
 指定从 frame_id -> child_frame_id 的变换 
 
-tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
-
-为上一数据结构的数组 
+tf/tfMesssage.msg & tf2_msgs/TFMessage.msg ： 为上一数据结构的数组 
 
 c++ 直接 sendTransform 发 vector 与 单个都可以
 
 lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧的
 
-### urdf 
+```c++
+// 发布的时候是一个四元数与一个转轴表示旋转
+tf::TransformBroadcaster broadcaster;
+broadcaster.sendTransform(
+        tf::StampedTransform(
+        tf::Transform(tf::Quaternion(0, 0, 0, 1), tf::Vector3(0.1, 0.0, 0.2)),
+        ros::Time::now(),"base_link", "base_laser"));
+// 接受
+tf::TransformListener listener;
+geometry_msgs::PointStamped laser_point;
+laser_point.header.frame_id = "base_laser";
+
+//we'll just use the most recent transform available for our simple example
+laser_point.header.stamp = ros::Time();
+
+//just an arbitrary point in space
+laser_point.point.x = 1.0;
+laser_point.point.y = 0.2;
+laser_point.point.z = 0.0;
+
+geometry_msgs::PointStamped base_point;
+listener.transformPoint("base_link", laser_point, base_point);
+// 第一个参数是目标的frame_id, 后面两个是待转换的坐标
+```
+
+## urdf （unified robot description format）
 
 .udrf  描述机器人
 
@@ -436,15 +457,11 @@ configure parameters:
 
 minimumScore : ? 
 
-
-
 ### localization 
 
 AMCL 定位；  蒙特卡洛定位
 
 先预先生成随机的位姿，通过机器人的移动，滤去不可能的位姿。
-
-
 
 ### path planner
 
@@ -459,8 +476,6 @@ frame 中 data 直接是把图片压成一维了， width*height
 \1. 重新定位机器人， 2D pose estimation
 
 \2. set 2D nav goal 
-
-
 
 Navigation
 
@@ -480,23 +495,23 @@ move_base :
 
 需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )
 
-
-
 costmap  (插件)
 
 两张： （global/local） ;  
 
-static layer : 订阅map topic ; obstacle layer : 动态添加  ; inflation layer : 膨胀障碍物，确定机器人安全范围 
+static layer : 订阅map topic ; obstacle layer : 动态添加， 在/map 中不存在的障碍物  ; inflation layer : 膨胀障碍物，确定机器人安全范围, 避免碰撞
 
-Mapserver 直接提供建好的地图。
+param tuning :
 
-my_map.yaml 表示地图的参数， *.pgm 保存地图 
+xy_goal_tolerance : 机器人目前与设定位姿的允许差值
+
+
 
 ### procedure
 
 1. 检查数据接受是否正常
 
-
+配置节点： 1. 
 
  ### ros&opencv
 
@@ -526,6 +541,3 @@ namespace cv_bridge {
 ## rospy
 
 publisher 初始化时， 设置queue_size 为较小整数， None 表示同步通信
-
-
-
