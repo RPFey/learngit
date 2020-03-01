@@ -219,3 +219,11 @@ git log --graph --pretty=oneline --abbrev-commit
 git merge --no-ff -m "..." <branch name>
 ```
 
+# GIT 设置 
+
+配置代理
+
+git config --global http.proxy "http://127.0.0.1:1080"
+
+git config --global https.proxy "https://127.0.0.1:1080"
+
