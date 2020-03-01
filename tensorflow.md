@@ -4,15 +4,11 @@
 
 export TF_CPP_MIN_LOG_LEVEL=2
 
-
-
 tensorflow 构建运算图，并不直接计算，表示计算任务，图中的节点表示计算任务(operation,op)
 
 在 session (context) 中执行图
 
 Variable 维护状态
-
-
 
 eg.  y = a+b   只会生成一张图，而不会得到结果
 
