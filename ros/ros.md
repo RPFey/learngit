@@ -1,32 +1,3 @@
-# CMAKE
-
-对于源码编译的库 
-
-cmake -D [parameters] ..
-
-make -j 
-
-make install 是把.h 文件写入/usr/lib/local 下
-
-
-
-MESSAGE(STATUS " path " ${...} ) 可以在编译时检查路径是否出错
-
-```
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
-elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-endif()
-```
-
-判断编译器支持
-
 # ENV
 
 ## to eclipse 
@@ -251,6 +222,16 @@ rospack list | grep [...] # 可以过滤字符串
 
 对于后者， 可以在前者包中生成库文件(.so)，然后引用即可 
 
+
+
+2020.1.15
+
+最近遇到一个与launch 有关的， roslaunch 时报错： 
+
+invalid \<param>  tag : cannot load command parameter [rosversion] : returned with code [1]
+
+这个是因为在更改 ROS_PACKAGE_PATH 时错误
+
 ## metapackage
 
 虚包， linux 软件包管理，底层软件系统。组合软件包。
@@ -265,15 +246,14 @@ master ,node 启动时向 master 申请， master  管理通信
 
 launch 会自动 启动 roscore
 
-<<<<<<< HEAD:ros.md
 这里提一下多线程，有时发布数据较快而处理较慢，导致遗漏数据，可以考虑采用多线程，把数据缓存再处理。
 
 单线程会将数据放入缓冲区，而如果之前缓冲区过长，导致数据长时间不能更新。
 
 nh.param(name , value, default)  This method tries to retrieve the indicated parameter value from the parameter server, storing the result in param_val. If the value cannot be retrieved from the server, default_val is used instead.
 
-=======
->>>>>>> c5421b567002ae14d780aabb10688a097e84d827:ros/ros.md
+
+
 ## topic 
 
 异步通信
@@ -382,7 +362,7 @@ remap ：　可以映射不同的话题，　将原本订阅/发布的话题改�
 
 即可向节点中传入参数
 
-## tf& URDF（unified robot description format）
+## tf
 
 ros 中的坐标变换标准 ，树状 tree, 使得不同sensor 得到的数据坐标能转换到同一坐标系下
 
@@ -406,19 +386,7 @@ c++ 直接 send Transform 发 vector 与 单个都可以
 
 lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧的
 
-## urdf 
 
-具体文件在 robot_sim_demo 下的　urdf/ *.urdf.xacro 中，　可以看到各个　frame　之间的转换 
-
-.udrf  描述机器人
-
-link 部件/ joint 关节（link 连接关系）
-
-link :
-
-inertial/ visual/ collision
-
-joint : 父子节点，变换关系
 
 ## slam
 
@@ -545,6 +513,232 @@ namespace cv_bridge {
 ## rospy
 
 publisher 初始化时， 设置queue_size 为较小整数， None 表示同步通信
+
+# GAZEBO
+
+gazebo --verbose 会显示所有信息 / -u 进入时处于暂停
+
+gazebo  系统文件夹下有纹理与模型，需要先 source /usr/share/gazebo/setup.bash
+
+## structure
+
+gazebo 包括 gzserver gzclient
+
+environment variables: 
+
+`GAZEBO_MODEL_PATH`: colon-separated set of directories where Gazebo will search for models
+
+`GAZEBO_RESOURCE_PATH`: colon-separated set of directories where Gazebo will search for other resources such as world and media files.
+
+`GAZEBO_MASTER_URI`: URI of the Gazebo master. This specifies the IP and port where the server will be started and tells the clients where to connect to.
+
+`GAZEBO_PLUGIN_PATH`: colon-separated set of directories where Gazebo will search for the plugin shared libraries at runtime.
+
+`GAZEBO_MODEL_DATABASE_URI`: URI of the online model database where Gazebo will download models from.
+
+整个机制与 ROS 很像， 有一个 master,name server, topic (communication)
+
+## sensor
+
+<http://gazebosim.org/tutorials?tut=sensor_noise&cat=sensors>
+
+add noise to sensors (lidar / imu / camera)
+
+## plugins
+
+Load functions create pointers and set it to sensors
+
+```shell
+gzserver -s <plugin_filename>
+```
+
+plugins 分为： world, model, sensor, system, visual, gui
+
+```c++
+#include <gazebo/gazebo.hh>
+
+namespace gazebo
+{
+  class WorldPluginTutorial : public WorldPlugin
+  {
+    public: WorldPluginTutorial() : WorldPlugin()
+            {
+              printf("Hello World!\n");
+            }
+
+    public: void Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
+            {
+            }
+  };
+  GZ_REGISTER_WORLD_PLUGIN(WorldPluginTutorial)
+  // register the plugin class (WORLD 可以替换为 GUI, SENSOR ...)
+}
+```
+
+Load 中 _sdf是 导入的 sdf 文件，含有标签信息
+
+### model
+
+相关 API 在 gazebo physics。(注意 Model 类)
+
+apply speed and velocity to a model 
+
+```c++
+namespace gazebo
+{
+  class ModelPush : public ModelPlugin
+  {
+    public: void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
+    {
+      // Store the pointer to the model
+      this->model = _parent;
+
+      // Listen to the update event. This event is broadcast every
+      // simulation iteration.
+      this->updateConnection = event::Events::ConnectWorldUpdateBegin(
+          std::bind(&ModelPush::OnUpdate, this));
+    }
+
+    // Called by the world update start event
+    public: void OnUpdate()
+    {
+      // Apply a small linear velocity to the model.
+      this->model->SetLinearVel(ignition::math::Vector3d(1, 0, 0));
+    }
+
+    // Pointer to the model
+    private: physics::ModelPtr model;
+
+    // Pointer to the update event connection
+    private: event::ConnectionPtr updateConnection;
+  };
+
+  // Register this plugin with the simulator
+  GZ_REGISTER_MODEL_PLUGIN(ModelPush)
+}
+```
+
+在赋予物体运动特性时，注意把 static 这个标签设置为 false
+
+## world
+
+### DEM file
+
+三维地形图
+
+## sensor
+
+其实 camera 是 model 下的一个属性
+
+camera 下可以自动保存图片
+
+```xml
+<model name='camera'>
+      <static>true</static>
+      <pose>-1 0 2 0 1 0</pose>
+      <link name='link'>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.1 0.1 0.1</size>
+            </box>
+          </geometry>
+        </visual>
+        <sensor name='my_camera' type='camera'>
+          <camera>
+            <!- set save and save path ->
+            <save enabled="true">
+              <path>/tmp/camera_save_tutorial</path>
+            </save>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+              <width>1920</width>
+              <height>1080</height>
+            </image>
+            <clip>
+              <near>0.1</near>
+              <far>100</far>
+            </clip>
+          </camera>
+          <always_on>1</always_on>
+          <update_rate>30</update_rate>
+        </sensor>
+      </link>
+    </model>
+```
+
+## model
+
+collision & visual 
+
+visual : the visual part of the model 
+
+collision: use simpler collision model to reduce computation time ("hit box")
+
+基本思路：
+
+collision 模块
+
+visual 模块
+
+## urdf  & sdf
+
+具体文件在 robot_sim_demo 下的　urdf/ *.urdf.xacro 中，　可以看到各个　frame　之间的转换 
+
+.udrf  描述机器人
+
+link 部件/ joint 关节（link 连接关系）
+
+link :
+
+inertial/ visual/ collision
+
+joint : 父子节点，变换关系
+
+
+
+文件基本构架：
+
+以 px4 为例，定义不同的飞机组件： iris\ rplidar\ lidar 
+
+再在一台具体飞机下确定使用哪些组件
+
+以 iris_fpv_cam 为例
+
+```xml
+<?xml version='1.0'?>
+<sdf version='1.5'>
+  <model name='iris_fpv_cam'>
+
+    <include>
+      <uri>model://iris</uri>
+      <!-- add the iris plane -->
+    </include>
+
+    <include>
+      <uri>model://fpv_cam</uri>
+      <!-- add the fpv_cam component, add define the joint of this component-->
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+    <joint name="fpv_cam_joint" type="fixed">
+      <child>fpv_cam::link</child>
+      <parent>iris::base_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <upper>0</upper>
+          <lower>0</lower>
+        </limit>
+      </axis>
+    </joint>
+
+  </model>
+</sdf>
+```
+
+
+
+
 
 
 
