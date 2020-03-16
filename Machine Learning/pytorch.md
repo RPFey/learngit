@@ -239,6 +239,69 @@ multigpu 代表不同进程间，不同 GPU 上有 shape 相同的 Tensor, 可�
 
 torch.distributed.new_group 可以将各优先级的进程组建成新组，在这些新组中进行后面的组间信息交流。返回一个 group object
 
+# pytorch Tutorials
+
+## Data preparation
+
+torch.utils.data.Dataset is a abstract class , following methods should be override. `__len__` & `__getitem__` . Typically, the path and txt setup is in `__init__` and image reading is in `__getitem__`
+
+```python
+class MyDataSet(Dataset):
+	def __init__(self, root_dir, csv_file, transform=None):
+	"""
+		the csv file contains thr images name
+	""" 
+	self.root_dir = root_dir
+	self.transform =transform # this may a function
+	self.label = pd.read_csv(csv_file) # read the label txt
+	# the preprocess of data or its organization can follow
+	
+	def __len__(self):
+		return len(self.label)
+	
+	def __getitem__(self, idx):
+		if torch.is_tensor(idx):
+			idx = idx.tolist()
+		img_name = o.path.join(self.root_dir, self.label.iloc[idx, 0 ]) # column 1 is the name
+		img = io.imread(img_name)
+		labels = self.label[idx, 0]
+		labels = np.array(labels).astype(np.float32).reshape(...) 
+		sample = {'image':image, 'labels':label}
+		if self.transform :
+			sample = self.transform(sample)
+		return sample
+```
+
+## Visualization
+
+tensorboard
+```python
+from torch.utils.tensorboard import SummmaryWritter
+writer = SummaryWriter('runs/test') # construct a writer
+
+# for a given image
+img_grid = torchvision.utils.make_grid(images)
+writer.add_image('batch_images', img_grid) # show the images in a batch
+# add network
+writer.add_graph(net, input)
+writer.close()
+
+# add projector to visualize data
+def select_n_random(data, labels, n=100):
+    assert len(data) == len(labels)
+    perm = torch.randperm(len(data))  # shuffle the index
+    return data[perm][:n], labels[perm][:n]
+
+images, labels = select_n_random(trainset.data, trainset.targets)
+class_labels = [classes[lab] for lab in labels]
+features = images.view(-1, 28*28)
+writer.add_embedding(features,
+                    metadata=class_labels,
+                    label_img=images.unsqueeze(1))
+
+# the add_scalar can show the chne of scalar(the mean loss of 1000 batch)
+```
+
 # STN
 
 STN 本质上是让网络习得一组变换参数。
@@ -256,4 +319,22 @@ x = F.grid_sample(x, grid)
 convert to torchscript and use cpp to deploy 
 
 <https://pytorch.org/tutorials/beginner/Intro_to_TorchScript_tutorial.html> (official tutorials)
+
+# 实际编写
+
+比如在计算$ |\vec{x_{tar}} - \vec{x_{cur}}|^{2} $ , 采用如下化简：
+$$ |\vec{x_{tar}} - \vec{x_{cur}}|^{2} = \vec{x_{tar}}^{T} \vec{x_{tar}} - 2 * \vec{x_{tar}}^{T} \vec{x_{cur}} + \vec{x_{cur}}^{T} \vec{x_{cur}} $$
+```python
+# des_tar , des_cur 代表两帧的描述子 N*256
+# terrible ways:
+des_tar = torch.unsqueeze(des_tar, 0) # 1*N*256
+des_cur = torch.unsqueeze(des_cur, 1) # N*1*256
+compare = torch.sum((des_tar - des_cur)**2, 2) # N*N*256
+
+# in ORB situation, the descriptor is binary 
+compare = torch.sum(des_tar, 1) - 2*torch.matmul(des_tar, des_cur.t()) + torch.sum(des_cur,1)
+
+# if descriptors are normalized : 
+compare = 2 - 2*torch.matmul(des_tar, des_cur.t()) 
+```
 
