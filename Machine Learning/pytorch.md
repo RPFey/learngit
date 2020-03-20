@@ -307,6 +307,19 @@ writer.add_embedding(features,
 
 ## nn Module
 
+nn.Parameter : nn.Module 类中有一个方法是 .parameters() (每次给优化器传参时)，会返回包含模型中所有 Parameter 对象的迭代器。
+
+```python
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.weight = nn.Parameter(torch.tensor([1.0, 1.0]))
+
+net = Net()
+for param in net.parameters():
+    print("param", param)
+```
+
 ### convolution
 
 nn.Module(nn.Parameter 只是Tensor 的派生)
