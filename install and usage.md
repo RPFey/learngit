@@ -8,7 +8,7 @@ pyrealsense 安装需要一些依赖项 , 否则cmake 时会报错
 
 ## usb 端口问题
 
-```
+```python
 Traceback (most recent call last):
   File "align-depth2color.py", line 26, in <module>
     profile = pipeline.start(config)
@@ -29,12 +29,10 @@ sensor.get_info(rs.camera_info.name)
 
 便可以返回相应的信息字符串。
 
-
-
-rs.options 类中有有对各种option 操作的方法，但是貌似是一个抽象类，其中的方法必须在sensor 对象上是使用。所以 docs 中 
+rs.options 类中有有对各种option 操作的方法，但是貌似是一个抽象类，其中的方法必须在sensor 对象上是使用。所以 docs 中
 
 ```python
 def f(self: pyrealsense2.options, option:pyrealsense2.option) -> str
 ```
 
-前者的self 其实必须是 sensor 类。
+前者的self 其实必须是 sensor 类

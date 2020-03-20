@@ -231,7 +231,7 @@ python -m torch.distributed.launch --nproc_per_node=2 --nnodes=3 --node_rank=0 -
 创建 nnodes 个node, 每个 node 有 nproc_per_node 个进程(一般为 GPU 数量)，每个进程独立执行脚本训练。 node rank 确定节点的优先级, 以 0 为主节点，使用其 addr:port 作为 master 的参数 (可以用为局域网内训练), 会自动分配 node 内的各线程优先级 (local_rank)
 
 ## 可选后端
-![后端](./img/backend.jpg)
+![后端](../img/backend.jpg)
 
 ## 进程间通信操作
 
@@ -243,7 +243,7 @@ torch.distributed.new_group 可以将各优先级的进程组建成新组，在�
 
 ## Data preparation
 
-torch.utils.data.Dataset is a abstract class , following methods should be override. `__len__` & `__getitem__` . Typically, the path and txt setup is in `__init__` and image reading is in `__getitem__`
+torch.utils.data.Dataset is a abstract class , following methods should be override. `__len__` & `__getitem__` . Typically, the path and txt setup is in `__init__` and image reading is in `__getitem__`。 `collate_fn` parameter in DataSet : this function is called when the batch is gathered (value has been returned by the `__getitem__` method and combined), so the input is a tuple.
 
 ```python
 class MyDataSet(Dataset):
@@ -275,6 +275,7 @@ class MyDataSet(Dataset):
 ## Visualization
 
 tensorboard
+
 ```python
 from torch.utils.tensorboard import SummmaryWritter
 writer = SummaryWriter('runs/test') # construct a writer
@@ -301,6 +302,56 @@ writer.add_embedding(features,
 
 # the add_scalar can show the chne of scalar(the mean loss of 1000 batch)
 ```
+
+# Docs
+
+## nn Module
+
+### convolution
+
+nn.Module(nn.Parameter 只是Tensor 的派生)
+
+```python
+# given a function, and applies it to all submodules
+def init_weights(m):
+	if isinstance(m, nn.Linear):
+		m.weight.fill_(1.0) # parameters are weight and bias, as you can read in source
+	elif isinstance(m, nn.Conv2d):
+		torch.nn.init.xavier_normal_(m.weight) 
+	elif isinstance(m, nn.BatchNorm2d):
+		torch.nn.init.constant_(m.bias, 0)
+	
+net = nn.Sequential(nn.Linear(2,2), nn.Linear(2,2))
+net.appply(init_weights)
+
+# some other initializaion methods are in torch.nn.init
+```
+
+当然，也可以用 apply 打印每一层信息
+
+nn.Conv2d 特性：
+
+1. dilation: control the space between kernel points (sparse convolve and link)
+2. group : the group convolution !
+
+nn.ConvTranspose2d : deconvolution
+$$ H_{out} = (H_{in} - 1)*stride - 2*padding + dilation[0]*(kernel[0] - 1) + padding[0] + 1$$
+
+nn.Unfold (unfold the block size) : 相当于是将一个block 中的所有展平。
+
+```python
+unfold = nn.Unfold(kernel_size=(2,3))
+input = torch.randn(2,5,3,4)
+output = unfold(input) # 2*30*4
+```
+
+pytorch 认为 batch*channe* (spatial dims) 这个就是处理空间上的。将每一个块变成一个单一的维度，方便操作。
+
+### Pooling layer
+
+FractionalMaxPool2d : paper --> [fractional pooling](http://arxiv.org/abs/1412.6071) ; the max-pooling is applied in kH * kW regions by stochastic step.
+
+LPPool : return the norm of the current feature vector.
 
 # STN
 

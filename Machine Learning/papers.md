@@ -30,7 +30,90 @@ $\tilde{X_{p}^{c}}$ and $\tilde{x_{p}^{c}}$ is the observed 3D(RGB-D), 2D point 
 
 SOTA methods include predicting the manually labeled grasp or evaluating the previuosly generated candidates and select the best one.
 
-#　Robots
+# 3D Vision
+
+## VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection
+
+### Intro
+
+Hand-crafted features are [39,7,8,19,40,33,6,25,1,34,2]; directly predict the 3D bounding box from 2D images [4,3,42,43,44,36]; d
+
+related works are PointNet[29 ] and its improved version[30 ]
+
+Summarize as below:
+
+1. a novel end-to-end deep architecture --> VoxelNet, directly operates on sparse 3D points.
+2. propose parallel processing methods
+
+### Architecture
+
+Three Functional blocks: 1) Feature Learning Network; 2) Convolutional Middle Layer; 3) RPN
+![VoxelNet](../img/CVpaper/VoxelNetArch.png)
+
+Feature Learning Network. 1) define the size for each voxel $v_{D}, v_{H}, v_{W}$, and the range of the points {D, H, W}. 2) group the points according to the voxel they reside in. 3) Random sample T points from voxels which have more than t points.
+
+### Arguments
+
+Random Sampling from voxels
+
+## Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection
+
+### Intro
+
+Salient object detection : distinguish the most distinctive obeject in the scene. Works to utilize the depth image in DNN [4]. In image segmentation [17, 40] ; object recognition [46 ]; visual tracking [3]
+
+methods to use depth information: concatenate depth feature map with RGB feature map at early/middle/late stage. <font color='#ff3d3d' face='DejaVu Sans Mono'> This fails due to :
+
+1. Shortage of high quality map : depth maps are much noiser and textureless than RGB
+2. depth and RGB have very different properties. (color in each image has differnet "meaning") Simple fusion like linear combination and concatenation fails. </font>
+
+instances of these methods are [4, 18, 20, 49, 27, 28, 55]. **The author proposes to use the contrast prior to enhance the depth map. Then the depth map is used as an attention map.**
+>contrast proir is proposed in [4, 18, 20, 49]; Notice , [2] is the benchmark of salient object detection; [11,50] are neural evidence for the contrast prior.
+
+Summary as below:
+
+1. a contrast loss is designed to utiliza the contrast prior, for depth map enhancement.
+2. fluid pyramid integration is proposed to make use of multi-scale cross-modal features.
+
+### Architeture
+
+the whole net is shown as below:
+![arch](../img/CVpaper/NetArch.png)
+the skeleton is VGG-16 (its first 5 blocks), and embed a FEM at the end of each block. The FEM ( Feature-enhanced Module ) : CEN & Cross-Modal fusion. The architecture of the CEN is repeats of the blocks --> conv(4,32,2) + conv(3,32,1) + RELU. *conv(kernel_size, number_of_channels, stride)* The block is repeated untill the feature map holds the same size with the RGB feature map counterpart. Then, two more convolutional layers are followed. (conv(3,32,1) + conv(3,1,1) + sigmoid) *then output looks like a prediction(pixel-wise)*
+
+CEN (Contrast-enhanced Net) [inspired by 14],  utilize the contrast between foreground and background as well as uniform distribution in the foreground. Contrast loss is composed of foreground object distribution loss $l_{f}$ , background distribution loss $l_{b}$, whole depth image distribution loss $l_{w}$.
+$$ l_{f} = -log(1-4*\sum_{(i,j) \in F} \frac{(p_{i,j}-\hat{p_{f}})^{2}}{N_{F}} )$$
+$$ l_{b} = -log(1-4*\sum_{(i,j)\in B} \frac{(p_{i,j}-\hat{p_{f}})^{2}}{N_{B}} )$$
+$l_{f}$ and $l_{b}$ **are to make the enhanced map coherent with the original depth map for both foreground and background objects**. F and B are foreground and background region in the image. $\hat{p_{f}}$ and $\hat{p_{b}}$ are the mean value in foreground and background respectively.$l_{w}$**is designed to enhance the difference of foreground and background**
+$$l_{w} = -log(\hat{p_{f}} - \hat{p_{b}})^{2}$$
+And the **Contrast Loss** is :
+$$ l_{c} = \alpha_{1} l_{f} + \alpha_{2} l_{b} + \alpha_{3} l_{w}$$
+
+Cross-modal fusion: the enhanced map is one-channel, similar to an attention map[21, 25]. The RGB feature map is enhanced according to this enhanced map through multiplication, and then adds to the original map.
+
+FPI(Fluid Pyramid Integration): take the output from each FEM, upsample the following tier to the current tier size, then add them. The top node of the pyramid is sent to a transition convolution layer and a sigmoid layer to get the final saliency map P. **This structure leads all the high-level features into low-level features, and integrates information both in multi-scale level and cross-modal level.**
+> The comparison is with [4, 55, 36]
+
+The **Total Loss** is:
+$$ L = l_{s} + \sum_{i=1}^{5} l_{c_{i}} \qquad l_{s} = YlogP + (1-Y)log(1-P)$$
+$l_{s}$ is the cross-entropy loss computed with the predicted saliency map and the ground truth saliency map. $l_{c_{i}}$ is contrast loss in the i th feature enhance module.
+
+### Experiments and Dataset
+
+Dataset : NJU2000 [32 ] and NLPR [12 ]
+
+Metric: F-measure
+$$ F_{\beta} = \frac{(1+\beta^{2})Precision*Recall}{\beta^{2}*Precision+Recall}$$
+and Mean Average Error(measure the difference between two maps):
+$$ \epsilon = \frac{1}{W*H} \sum_{x=1}^{W} \sum_{y=1}^{H} |P(x,y)-Y(x,y)| $$
+S-measure [14 ]:
+$$ S_{measure} = \alpha * S_{o} + (1-\alpha)*S_{r}$$
+
+### arguments
+
+the integration method (depth and RGB) is novel. I think this can be used as a preprocess on the depth image
+
+# Robots
 
 ## DroNet: Learning by Flying
 
