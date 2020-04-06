@@ -1,3 +1,37 @@
+
+<!-- vim-markdown-toc Marked -->
+
+- [Dataset](#dataset)
+	- [SUN3D](#sun3d)
+		- [Introduction](#introduction)
+		- [Capturing Process](#capturing-process)
+	- [Jacquard: A Large Scale Dataset for robotic Grasp Detection](#jacquard-a-large-scale-dataset-for-robotic-grasp-detection)
+		- [Introduction](#introduction-1)
+- [3D Vision](#3d-vision)
+	- [VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection](#voxelnet-end-to-end-learning-for-point-cloud-based-3d-object-dectection)
+		- [Intro](#intro)
+		- [Architecture](#architecture)
+		- [Experiment](#experiment)
+		- [Arguments](#arguments)
+	- [Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection](#contrast-prior-and-fluid-pyramid-integration-for-rgbd-salient-object-detection)
+		- [Intro](#intro-1)
+		- [Architeture](#architeture)
+		- [Experiments and Dataset](#experiments-and-dataset)
+		- [arguments](#arguments-1)
+	- [Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network](#dense-3d-point-cloud-reconstruction-using-a-deep-pyramid-network)
+		- [Intro](#intro-2)
+	- [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
+		- [Intro](#intro-3)
+- [Robots](#robots)
+	- [DroNet: Learning by Flying](#dronet-learning-by-flying)
+		- [Structure](#structure)
+		- [Experiment](#experiment-1)
+		- [thoughts & cites](#thoughts--cites)
+	- [Real-time 3D Reconstruction on Construction site using Visual SLAM and UAV](#real-time-3d-reconstruction-on-construction-site-using-visual-slam-and-uav)
+		- [Intro](#intro-4)
+
+<!-- vim-markdown-toc -->
+
 # Dataset
 
 ## [SUN3D](http://vision.princeton.edu/projects/2013/SUN3D/paper.pdf)
@@ -30,6 +64,38 @@ $\tilde{X_{p}^{c}}$ and $\tilde{x_{p}^{c}}$ is the observed 3D(RGB-D), 2D point 
 
 SOTA methods include predicting the manually labeled grasp or evaluating the previuosly generated candidates and select the best one.
 
+Summary:
+
+1. Jacquard synthetic Dataset
+2. SGT and other criterion for grasp evaluation
+
+### Model Grasp
+
+representation of a grasp is :
+$$ g = {x,y,h,w,\theta} $$
+This coordinate can be easily expressed in image coordinate system. As shown in the figure:
+<img src=../img/CVpaper/JacquardGrasp.png height="300" wdth="400" />
+z position and approach can be obtained through depth image.
+
+### Generate synthetic dataset
+
+generate scene description: select model, resize them, add mass and drop into the scene. 
+
+Image rendering: render two more RGB images with a projected pattern and applied a stereo-vision algorithm [19] to them. (add noise)
+
+Annotation Generation: generate thousands of potential grasps and perform trials in simulation. The distribution for grasp generation is concentrated around the aligned edges.
+
+### Model Assessment
+
+grasp criterion in Cornell Dataset (rectangle metrics):
+
+1. angle between prediction and ground-truth is below a certain threshold.
+2. IoU is over a threshold.
+
+SGT (simulated grasp trial-based criterion) : rebuild the corresponding scene in the simulation environmnt to test whether a predicted grasp is good or not. (This may be the final test metrics)
+
+
+
 # 3D Vision
 
 ## VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection
@@ -53,18 +119,33 @@ Three Functional blocks: 1) Feature Learning Network; 2) Convolutional Middle La
 FLN(feature learning network): **Grouping** : group the points according to the voxel they reside in. Due to the disparity of point cloud in the space, a voxel will contain a variable number of points. **Random Sampling** : sample T points from voxels containing more that T points. This is due to the highly variable density throughout the space. **Feature Encoding**: Denote $V = \{ p_{i} = [x_{i}, y_{i}, z_{i}, r_{i}]^{T} \in R^{4} \}_{i=1,...,T}$ (maybe we can substitute r --> r,g,b). First the centroid is computed as ($v_{x}$,$v_{y}$, $v_{z}$). $V_{in} = \{ \hat{p_{i}} = [x_{i}, y_{i},z_{i}, r_{i}, x_{i} - v_{x}, y_{i} - v_{y}, z_{i} - v_{z} ]^{T} \in R^{7}  \}_{t=1,...,T}$, and each $\hat{p_{i}}$ is fed into a VEF Module.
 
 VEF Module ( Linear Layer, Batch Norm, RELU, Maxpool ) to have point-wise information. Use element-wise maxpool across all $f_{i} \in V$ --> $\tilde{f} \in R^{m}$ *m is the feature channel* (perform on each channel) and aggregate the information: $f_{i}^{out} = [f_{i}^{T}, \tilde{f}^{T}]^{T} \in R^{2m}$. A VEF($c_{in}$, $c_{out}$) learn parameters $c_{in} * (c_{out} / 2)$.
-![FeatureEncoding](../img/CVpaper/FeatureEncoding.png)
+<img src=../img/CVpaper/FeatureEncoding.png height="300" width="400"/>
 
 After VEF, each voxel has a representing feature vector $f^{out} \in R^{c}$. Thus form a 4D tensor C * D * H * W. H, D, W is the voxel number along each dimension.
 
 RPN network, as shown in the figure. Notice: After the middle convolution ($C*D*W*H$), reshape it to ($(C*D)*W*H$) and send to RPN.
 ![RPN](../img/CVpaper/VoxelNetRPN.png)
 
-Loss Function: 
+Loss Function: the residue is computed first:
+$$ \delta x = \frac{x_{c}^{g}-x_{c}^{a}}{d^{a}} \quad \delta y = \frac{y_{c}^{g} - y_{c}^{a}}{d^{a}} \quad \delta z = \frac{z_{c}^{g}-z_{c}^{a}}{d^{a}} $$
+$g$ denotes the coordinates to the ground and $a$ denotes anchor, $d^{a}$ is diagonal of the base of the anchor.
+$$ \delta l = log(\frac{l^{g}}{l_{a}}) \quad \delta w = log(\frac{w^{g}}{w^{a}}) \quad \delta h = log(\frac{h^{g}}{h^{a}}) $$
+$$ \delta \theta = \theta ^{g} - \theta ^{a}$$
+the regression output is:
+$$ u = (\delta x, \delta y, \delta z, \delta l, \delta w, \delta h, \delta \theta)$$
+and the ground truth label is parameterized as $u_{i}^{\star}$.　Total Loss:
+$$ L = \alpha \frac{1}{N_{pos}}\sum_{i} L_{cls}(p_{i}^{pos}, 1) + \beta \frac{1}{N_{neg}} \sum_{i} L_{cls}(p_{i}^{neg}, 0) + \frac{1}{N_{pos}} \sum_{i} L_{reg}(u_{i}, u_{i}^{\star})$$
+$u_{i}$ and $u_{i}^{\star}$ are relative to the positive anchor.
+
+### Experiment
+
+due to the sparsity of the pointcloud, sparse tensor can accelarate the training process.
+
+Detail : **details of network are in section 3.1**
 
 ### Arguments
 
-Random Sampling from voxels
+Random Sampling from voxels (this is really like yolo, grid the whole picture)
 
 ## Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection
 
@@ -123,7 +204,30 @@ $$ S_{measure} = \alpha * S_{o} + (1-\alpha)*S_{r}$$
 
 the integration method (depth and RGB) is novel. I think this can be used as a preprocess on the depth image
 
-#　Robots
+## Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network
+
+### Intro
+
+We use surface voxel to represent 3D structure. This represntation is suffered from disparity. Use voxel to fill the volumn to represent the object is inefficient because the surface to volumn ratio decreases as the object gets bigger.
+
+Current point cloud construction drawbacks:
+
+1. the dense construction is heavy for upcoming network process.
+2. Formulation would be memory and time consuming.
+
+DensePCR predicts point clouds of increasing resolution.
+
+## 3D point cloud registration for localization using a deep nueral network auto-encoder
+
+### Intro
+
+Methods to analyze point cloud data[1]. relating SLAM tech[3,4]. 3D reconstrution of scenes[5].
+
+This paper focuses on localization techniques that rely on **registering large-scale point cloud** and a small point-cloud scanned within a scene at different times. The transformation between small point cloud (local point cloud) and large-scale point cloud (global point cloud) determines the position of camera.
+
+registration of point clouds. Iterative Closest Point (ICP) [18], correlation of Extended Gaussian Images in the Fourier Domain[20].
+
+# Robots
 
 ## DroNet: Learning by Flying
 
@@ -152,3 +256,14 @@ the reason to use resnet is because the resnet scheme is proposed to address the
 problems caused by the two branch. The gradient of classification and regression varies, **so the weight for this two loss must balance the inherent difference of their gradient**.
 
 paper [24] is used to explain the attention of the network, where does the drone focus on? <font color='#ff0000'> the author finds the drone relies on line-like features. (this may not suit our application)</font>
+
+## Real-time 3D Reconstruction on Construction site using Visual SLAM and UAV
+
+### Intro
+
+photogrammetry has advantages like texture rich, low-cost and light weighted. Although the noise floor of image based 3D model is nearly three times higher that Lidar, the density points is much larger, which shows a better representation.
+
+General framework for visual slam: Visual simultaneous localization and mapping: a survey ; "Appearance-based loop closure detection for online large-scale and long-term operation" & "Online global loop closure detection for large-scale multi-session graph-based slam"
+
+
+

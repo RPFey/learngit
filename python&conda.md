@@ -6,7 +6,7 @@ python -m pip 使用pip 工具
 
 当在根目录下时 ， 可以用 pyhton -m pip install --usr 来安装在当前用户下
 
-# Multiprocessing 
+## Multiprocessing
 
 采用 Pool/Queue 管理
 
@@ -18,7 +18,7 @@ multiprocessing.set_start_method('spawn', True)
 q = multiprocessing.Queue()
 jobs = []
 for i in range(N):
-      p = multiprocessing.Process(target=self.SingleFrameLoss, args = (i, cur_xy, tar_xy, desc)) 
+      p = multiprocessing.Process(target=self.SingleFrameLoss, args = (i, cur_xy, tar_xy, desc))
       jobs.append(p)
       p.start()
 
@@ -31,13 +31,14 @@ results = [p.get() for p in jobs]
 # 采用 Pool
 pool = multiprocessing.Pool()
 ```
+
 ## 安装包
 
 python setup.py build  <https://docs.python.org/2/install/>
 
-put the file to install into a build directory 
+put the file to install into a build directory
 
-params : 
+params :
 
 --build-base=/path/to/build-directory (redirect the build path)
 
@@ -71,9 +72,7 @@ params :
 
 --user (when don't have root permission)
 
-
-
-conda 作为环境管理工具 
+conda 作为环境管理工具
 
 如果出现安装包之间不兼容（incompatible with each other）:
 
@@ -82,5 +81,3 @@ conda 作为环境管理工具
 2. 安装的python 不对（64bit 装了 32bit 的）
 
    conda 可以构建不同的python 环境（对应不同的版本）
-
-   

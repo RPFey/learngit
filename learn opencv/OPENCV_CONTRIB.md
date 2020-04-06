@@ -4,13 +4,9 @@
 
 ## FEATURE EXTRACTION AND MATCHING
 
-使用 sift 特征 
+使用 sift 特征
 
 xfeature2d.sift_create()
-
-
-
-
 
 ## selective search
 
@@ -32,6 +28,3 @@ print('Total Number of Region Proposals: {}'.format(len(rects)))
 ```
 
 位于 contrib 模块中
-
-
-

@@ -1,11 +1,11 @@
-# model 
+# model
 
 decision tree : use character of data to build a decision tree. Make predictions according to this tree.
 
-# pandas 
+# pandas
 
 ```python
- # read files 
+ # read files
  data = pd.read_csv("path_to_csv")
  data.describe()
 ```
@@ -23,12 +23,13 @@ y = data.Price   # the Price column
 features = ['Rooms', 'Bathroom', 'Landsize', 'Lattitude', 'Longtitude'] 
 # string is necessary
 X = data[features]
-# check first n data 
+# check first n data
 X.head(n)
 ```
+
 # sklearn
 
-## random forest 
+## random forest
 
 construct many trees and make predictions as the average of these trees
 
@@ -47,9 +48,10 @@ model = DecisionTreeRegressor(random_state = 1)
 model.fit(X, y)
 prediction = model.predict(X.head()) # X is also right
 ```
-初始化时可选参数 ： 
 
-max_leaf_node : 控制模型大小 
+初始化时可选参数 ：
+
+max_leaf_node : 控制模型大小
 
 ## validation
 
@@ -60,7 +62,7 @@ from sklearn.metrics import mean_absolute_error
 mean_absolute_error(y, model.predict(X))
 ```
 
-validation set 
+validation set
 
 ```python
 from sklearn.model_selection import train_test_split

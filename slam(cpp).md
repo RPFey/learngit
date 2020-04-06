@@ -1,8 +1,9 @@
-# Eigen 
+# Eigen
 
-## with opencv 
+## with opencv
 
-与opencv转换。
+与opencv转换
+
 ```c++
 cv::cv2eigen(mat, m);
 cv::eigen2cv(m, mat);
@@ -34,8 +35,6 @@ CostFunction* cost_function =
 problem.AddResidualBlock(cost_function, NULL, &x);
 ```
 
-
-
 当损失函数中需要调用其它库中的函数，可以使用数值求导(numerical derivatives)
 
 ```c++
@@ -46,13 +45,11 @@ struct NumericDiffCostFunctor {
   }
 };
 CostFunction* cost_function =
-  new NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL, 1, 1>( 
+  new NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL, 1, 1>(
       // 多加了一个参数
       new NumericDiffCostFunctor);
 problem.AddResidualBlock(cost_function, NULL, &x);
 ```
-
-
 
 min  || F(x) || 中F(x)  是一个向量值函数 F(x) = [f1, f2, f3, f4]
 
@@ -69,7 +66,7 @@ problem.AddResidualBlock(
   new AutoDiffCostFunction<F3, 1, 1, 1>(new F3), NULL, &x2, &x3)
 problem.AddResidualBlock(
   new AutoDiffCostFunction<F4, 1, 1, 1>(new F4), NULL, &x1, &x4);
-// F1 - F4 为 functor 
+// F1 - F4 为 functor
 ```
 
 ## curve fitting
@@ -106,15 +103,13 @@ for (int i = 0; i < kNumObservations; ++i) {
 }
 ```
 
-Loss Function (remove outliers) 
+Loss Function (remove outliers)
 
 ```c++
 problem.AddResidualBlock(cost_function, new CauchyLoss(0.5) , &m, &c);
 ```
 
 add Cauchy loss as the kernel function to remove outliers.
-
-
 
 相机参数估计：
 
@@ -177,12 +172,9 @@ struct SnavelyReprojectionError {
 };
 ```
 
-
-
 optimization options :
 
 ```c++
 options.linear_solver_type = ceres::DENSE_SCHUR;
 // alternatives : ceres::SPARSE_NORMAL_CHOLESKY for sparse matrix
 ```
-

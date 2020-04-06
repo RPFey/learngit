@@ -1,3 +1,43 @@
+
+<!-- vim-markdown-toc GFM -->
+
+- [PX4](#px4)
+  - [Build (make)](#build-make)
+  - [仿真](#%e4%bb%bf%e7%9c%9f)
+    - [先编译后仿真](#%e5%85%88%e7%bc%96%e8%af%91%e5%90%8e%e4%bb%bf%e7%9c%9f)
+  - [书写规则](#%e4%b9%a6%e5%86%99%e8%a7%84%e5%88%99)
+  - [hardware](#hardware)
+    - [S-BUS](#s-bus)
+    - [PWM&PPM](#pwmppm)
+    - [sensor](#sensor)
+  - [启动脚本分析](#%e5%90%af%e5%8a%a8%e8%84%9a%e6%9c%ac%e5%88%86%e6%9e%90)
+  - [Mixer (混合控制)](#mixer-%e6%b7%b7%e5%90%88%e6%8e%a7%e5%88%b6)
+  - [构架](#%e6%9e%84%e6%9e%b6)
+    - [文件构架](#%e6%96%87%e4%bb%b6%e6%9e%84%e6%9e%b6)
+  - [concept](#concept)
+  - [drivers(hardware)](#drivershardware)
+    - [Fundamentals](#fundamentals)
+    - [optical flow](#optical-flow)
+  - [drivers(software) / Modules](#driverssoftware--modules)
+    - [GPS](#gps)
+    - [EKF2](#ekf2)
+  - [application](#application)
+    - [multi-thread](#multi-thread)
+    - [work_queue](#workqueue)
+    - [commander](#commander)
+    - [navigation](#navigation)
+    - [PID_control](#pidcontrol)
+    - [bootloader](#bootloader)
+    - [topic](#topic)
+    - [CMakeLists.txt](#cmakeliststxt)
+  - [ROS](#ros)
+  - [Mavlink](#mavlink)
+  - [uORB](#uorb)
+- [多线程](#%e5%a4%9a%e7%ba%bf%e7%a8%8b)
+  - [控制](#%e6%8e%a7%e5%88%b6)
+
+<!-- vim-markdown-toc -->
+
 # PX4
 
 ## Build (make)
@@ -32,8 +72,6 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd):$(pwd)/Tools/sitl_gazebo
 ```
 
 在 Firmware/launch 下有 .launch 文件可以配置仿真参数
-
-
 
 同样， GPU rplidar 需要更改成 CPU 版本：
 
@@ -73,42 +111,65 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd):$(pwd)/Tools/sitl_gazebo
 同时 rplidar 不能与 lidar 同时使用，有冲突
 
 关于仿真模型，在 rcS 中会source 特定的仿真模型的启动脚本以设置参数。在加入自己的新模型时要加入自己的 bash 文件，写法可以随便抄一个。
+
 ## 书写规则
+
 一般情况下 [....] 代表输入参数
 
 ## hardware
+
 在 QGC 上插入 pixhawk4 飞控板后，会显示飞控版本,根据这个选择 make 时候的版本
+
 ### S-BUS
+
 RC 与 接收机之间的通信协议，软件驱动在 /src/drivers/linux_sbus (架构同 GPS)
+
 ### PWM&PPM
-在 /src/drivers/pwm_input 下；_timer_init 时初始化定时器，pwmin_tim_isr 是中断处理函数
-PPM 是指在一个输入口同时接受多路PWM信号
+
+在 /src/drivers/pwm_input 下；_timer_init 时初始化定时器，pwmin_tim_isr 是中断处理函数。PPM 是指在一个输入口同时接受多路PWM信号
+
 ### sensor
+
 部分仪器校准文件在 Commander 下，
+
 ## 启动脚本分析
-在 /src/driver/px4io/px4io.cpp  是主处理器对协处理器的操作
-下面对应的 update 选项是 烧写对应的二进制文件到协处理器中.
+
+在 /src/driver/px4io/px4io.cpp  是主处理器对协处理器的操作.下面对应的 update 选项是烧写对应的二进制文件到协处理器中.
 ![启动流程](./img/启动流程.png)
 在build/px4_fmu-v2_default/NuttX/apps/system/nsh/nsh_main.c
-是对 nsh 初始化 --> nsh_console --> nsh_initscript 对 rcS 
+
+是对 nsh 初始化 --> nsh_console --> nsh_initscript 对 rcS
+
 ## Mixer (混合控制)
+
 经过位置控制和姿态控制后，控制量通过 actuator_controls发布，其中 control 数组存放了四个的控制量。(roll, yaw, pitch , throttle) 这四个量投影到不同的轴臂上，投影关系即是混控矩阵。
+
 ROMFS/px4fmu_common/mixer 存放了不同机型的混控文件 *.mi
+
 空混控器：接受输入，输出0
+
 简单混控：将多通道的控制量进行混合
+
 M：\<control mount>
+
 S:  \<group> \<index> \<ve scale> \<offset> \<lower limit> \<upper limit>
+
 R：\<geometry> \<roll scale> \<pitch scale> \<yaw scale> \<deadband> deadband 是设置最大值进行归一化。
-##  构架
+
+## 构架
+
 主处理器 F4 (姿态估计与控制) \ F1 IO 口
+
 主处理器为协处理器下载固件 (Firmware/drivers/px4io)
+
 PX4IO_Uploader (struct) (px4_io_start main function)
+
 协处理器 (modules/px4iofirmware)
+
 1. 数据存储： 飞行任务存储 ； 飞行参数存储 ； (param_get, param_set 读写参数) ；飞行日志，早期为存储到 sdcard .csv 文件，近期由 logger 保存 uORB 信息。
 2. 外部通讯： 采用MAVLINK 协议
 3. 驱动程序： 遥控器驱动，协议有 SBUS\PPM , SBUS 采用串口通讯 ；
 4. 飞行控制： Sensor Hub : 收集传感器数据并送到 ekf2 模块； ekf2 对飞机姿态和位做出估计；位置控制 -> 姿态控制 -> 控制输出 (由姿态控制的控制量根据 Mixer 混控文件，输出 PWM 控制信号)
-
 
 ### 文件构架
 
@@ -134,60 +195,64 @@ control groups ( physically : one for a bus)
 
 ## drivers(hardware)
 
+### Fundamentals
+
 在操作系统中硬件设备注册的节点以文件形式存在(/dev/xxx)， 以 Linux , Unix 为最。其为应用程序提供读写等方法(open, close, read, write, seek, ioctl)。(GPIO, UART, USB, SPI ... 都是这样)
+
 解释 ioctl : 系统调用， 传入一个与设备有关的请求码
+
 ```c++
 // 定义通用文件操作结构体，由驱动程序自己实现
-struct file_operations{
-	int (*open)(FAR struct file *filep);
-	int (*close)(FAR struct file *filep);
-	ssize_t (*read)(FAR struct file *filep, FAR char *buffer, size_t buflen);
-	ssize_t (*write)(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-	off_t (*seek)(FAR struct file *filep, off_t offset, int whence);
-	int (ioctl)(FAR struct file *filep, int cmd, unsigned long arg); // cmd 是指令，自定义
+    struct file_operations{
+        int (*open)(FAR struct file *filep);
+        int (*close)(FAR struct file *filep);
+        ssize_t (*read)(FAR struct file *filep, FAR char *buffer, size_t buflen);
+        ssize_t (*write)(FAR struct file *filep, FAR const char *buffer, size_t buflen);
+        off_t (*seek)(FAR struct file *filep, off_t offset, int whence);
+        int (ioctl)(FAR struct file *filep, int cmd, unsigned long arg); // cmd 是指令，自定义
 } // 此处均为函数指针
 // 驱动程序向操作系统注册节点  (C 语言使用)
 int register_driver(FAR const char *path, FAR const struct file_operations *fops, mode_t mode, FAr void* priv);
-/* path : 文件路径
-	fops : 文件操作结构体
-	mode: 设备权限
-	priv: 需要存放自定义的数据内容
+    /* path : 文件路径
+    fops : 文件操作结构体
+    mode: 设备权限
+    priv: 需要存放自定义的数据内容
 */
 
 // C++ 定义一个继承 CDev 的类并重写文件操作方法
 class PWMIN : cdev::CDev
 {
-public:
-	PWMIN();
-	virtual ~PWMIN();
-	virtual int init();
-	virtual int open(struct file *filp);
-	virtual ssize_t read(struct file *filp, char *buffer, size_t buflen);
-	virtual int ioctl(struct file *filp, int cmd, unsigned long arg);
-	//  ....
-private:
-	uint32_t _error_count;
-	// ...
+    public:
+        PWMIN();
+        virtual ~PWMIN();
+        virtual int init();
+        virtual int open(struct file *filp);
+        virtual ssize_t read(struct file *filp, char *buffer, size_t buflen);
+        virtual int ioctl(struct file *filp, int cmd, unsigned long arg);
+        //  ....
+    private:
+        uint32_t _error_count;
+        // ...
 };
 int
 PWMIN::init()
 {
-	/* we just register the device in /dev, and only actually
-	 * activate the timer when requested to when the device is opened */
-	CDev::init();  // 注册设备
-	// ... 
-	return OK;
+        /* we just register the device in /dev, and only actually
+        * activate the timer when requested to when the device is opened */
+        CDev::init();  // 注册设备
+        // ...
+        return OK;
 }
 // C 中实现
 ..... 声明函数
 static struct fops =
 {
-	.open = led_open,
-	.close = led_close,
-	.read = led_read,
-	.write = led_write,
-    .seek = led_seek,
-    .ioctl = led_ioctl    // 具体操作 
+        .open = led_open,
+        .close = led_close,
+        .read = led_read,
+        .write = led_write,
+        .seek = led_seek,
+        .ioctl = led_ioctl    // 具体操作
 }
 // 实现各函数，在 open 时要设置 gpio
 
@@ -196,18 +261,15 @@ int main (int argc, char *argv[]){
     if (argc <= 1){
         return -1;
     }
-    
     if (strcmp(argv[1],"start") == 0){
         if(register_driver("/dev/led", & fops, 0666, NULL) == 0){
             print("led reg err .\n");
             return -1;
         }
     }
-    
     if( strcmp(argv[1], "stop") == 0){
         unregister_driver("/dev/led");
     }
-    
     if(strcmp(argv[1], "on") == 0){
         int fd = open("/dev/led", O_RDWR);  // O_RDWR 可读写
         if(fd < 0 ){
@@ -218,29 +280,37 @@ int main (int argc, char *argv[]){
         close(fd);
         return 0;
     }
-    
     // omitted ...
 }
 ```
 
 总结：启动/停止 对应注册，取消注册设备；
+
 每一次使用时都是先打开文件，进行读写 或 ioctl 操作(调用相应函数)
+
 driver 的 CMakeLists
+
 ```cmake
+
 px4_add_module(
-	MODULE drivers__led    # drivers__[name]
-	MAIN led  # 入口函数 [name]__main
-	STACK_MAIN 2000
-	SRCS
-		
-	DEPENDS
-		platforms__common
+        MODULE drivers__led    # drivers__[name]
+        MAIN led  # 入口函数 [name]__main
+        STACK_MAIN 2000
+        SRCS
+        DEPENDS
+            platforms__common
 )
 ```
 
-## drivers(software)
+### optical flow
 
-将源码与教程混合，以 GPS 为例
+类是 PX4FLOW ，继承了I2C 类(这是一个设备类) 。需要配置总线，　地址，　机架相对指南针偏转，　频率，　传感器朝向(distance_sensor_s)
+
+## drivers(software) / Modules
+
+此类代码都在 /src/module 下面
+
+### GPS
 
 关于 ModuleBase, 在 px4_module.h有使用说明
 
@@ -249,10 +319,11 @@ px4_add_module(
 int  // 入口函数
 gps_main(int argc, char *argv[])
 {
-	return GPS::main(argc, argv);
+return GPS::main(argc, argv);
 }
-/* 在 main 中会调用一个 start_command_base 启用一个线程GPS 中的 task_spawn 有两种模式 MAIN, SECONDARY; 
-	对于 MAIN ， 入口函数 run_trampoline 在基类中定义， 调用run 函数， 另一个在 gps.cpp 下重新定义了*/
+/* 　在 main 中会调用一个 start_command_base 启用一个线程GPS 中的 task_spawn 有两种模式 MAIN, SECONDARY;
+
+    对于 MAIN ， 入口函数 run_trampoline 在基类中定义， 调用run 函数， 另一个在 gps.cpp 下重新定义了*/
 
 // 教程， 创建后台进程
 static int _running = 0; // 标志符
@@ -273,21 +344,23 @@ int gps_core(int argc, char *argv[]){
         printf("open dev err. \n");
         return -1;
     }
-    
     while(_running){
         int len = read(fd, buff, 200);
         if (len > 0){
             // operations here ...
-        } 
-        
+        }
         usleep(10000);
     }
 }
 ```
 
+### EKF2
+
+EFK 主函数直接继承　ModuleBase
+
 ## application
 
-application 的 main 函数命名为 <module_name>_main 
+application 的 main 函数命名为 <module_name>_main
 
 ```c++
 __EXPORT int simple_main(int argc, char* argv);
@@ -325,7 +398,6 @@ int pthread_create(FAR pthread_t *thread,  // 线程标识符
                    pthread_startroutine_t start_routine,  // 函数入口
                    pthread_addr_t arg)
 // 返回 0 成功， 正数失败
- 
     // 初始化线程属性
     int pthread_attr_init(FAR pthread_attr_t *attr)
     // 销毁进程属性
@@ -336,22 +408,24 @@ int pthread_create(FAR pthread_t *thread,  // 线程标识符
     int pthread_attr_getschedparam(FAR const pthread_attr_t * attr, FAR struct sched_param *param)
     //设置线程调度参数
     int pthread_attr_setschedparam(FAr pthread_attr_t *attr, FAR const struct sched_param *param)
-    
 //多参数传入
 typedef struct TaskArg_{
-	int x;
-	int y; // 等等
+        int x;
+        int y; // 等等
 }  TaskArg
 typedef TaskArg* task_arg;
+
 //线程初始化
 pthread_attr_t pth_attr;
 pthread_attr_init(&pth_attr);
 pthread_attr_setstacksize(&pth_attr, 1000); // 设置堆栈大小为 1000
-//设置线程优先级 
+
+//设置线程优先级
 struct sched_param pth_param;
 pthread_attr_getschedparam(&pth_attr, &pth_param);
 pth_param.sched_priority = 100;
 pthread_attr_setschedparam(&pth_attr, &pth_param);
+
 //创建线程
 pthread_t pth;
 // 初始化参数
@@ -362,25 +436,28 @@ arg.y = 2;
 pthread_create(&pth, &pth_attr, pth_run, (void *) &arg);   // pth_run 为入口函数
 
 void* pth_run(void* arg){
-	char pth_name[20];
-	strcpy(pth_name, "20");
-	prctl(PR_SET_NAME, pth_name, getpid());     // 为线程设置名称(由第一个参数确定--> PR_SET_NAME)
-	// 调用参数
-	task_arg arg_in = (task_arg)arg;
-	arg_in->x = ... 
+        char pth_name[20];
+        strcpy(pth_name, "20");
+        prctl(PR_SET_NAME, pth_name, getpid());     // 为线程设置名称(由第一个参数确定--> PR_SET_NAME)
+        // 调用参数
+        task_arg arg_in = (task_arg)arg;
+        arg_in->x = ...
 }
 ```
 
 ### work_queue
-相当于一个堆栈，在一定时间和执行相应函数。
+
+相当于一个堆栈，在一定时间执行相应函数.
+
 ```c++
 int work_queue(int qid, // HPWORK/ LPWORK (高/低)优先级
-								FAR struct work_s *work, // 工作队列结构体
-								worker_t worker,  // 入口函数
-								FAR void* arg,    
-								systime_t delay)  // 延迟执行时间
+        FAR struct work_s *work, // 工作队列结构体
+        worker_t worker,  // 入口函数
+        FAR void* arg,
+        systime_t delay)  // 延迟执行时间
 work_queue(HPWORK, &_work,(worker_t) &func, (void *)arg, 100);
 ```
+
 在函数内使用可以起到循环反复执行的效果
 
 ### commander
@@ -395,7 +472,7 @@ check : 起飞前检查
 
 arm/disarm : 飞控解锁(锁定) （ROS 里面获得飞机操控权也需要这个）解锁需要通过航前检查
 
-takeoff/land 
+takeoff/land
 
 mode : 飞机的飞行模式
 
@@ -404,7 +481,9 @@ mode : 飞机的飞行模式
 arming_state ：飞机的锁定与解锁状态，在 vehicle_status.msg 中 只有arming_state 为 ARMING_STATE_ARMED 时，才表示飞机解锁。用于实际对电机控制是 actuator_armed.msg 的 bool armed; arming_state 之间的转换在arming_transitions 数组里表示。
 
 main_state : 主状态   不同模式需要的状态
+
 ![main_state](./img/main_state.jpg)
+
 主状态在 commander_state.msg 中，由 main_state_transition 处理
 
 nav_state : 导航状态 vehicle_state.msg 中 nav_state 决定。无人机会根据当前状态与不同条件对导航状态进行降级评估。在实际飞行时遇到异常会修改导航状态。
@@ -433,13 +512,13 @@ nav_state : 导航状态 vehicle_state.msg 中 nav_state 决定。无人机会�
 
 PX4_FMU nash_main()  执行飞控的固件启动脚本  (Romfs/Px4fmu_common/Init.d/rcS)
 
-PX4_IO      
+PX4_IO
 
-硬件 -- > 传感器 
+硬件 -- > 传感器
 
 ### topic
 
-using uORB 
+using uORB
 
 与 ros 的消息机制很像，数据格式的头文件在 build 后生成
 
@@ -449,7 +528,7 @@ using uORB
 
 添加模块 ：
 
-px4_add_module ,  详见 Firmware/cmake/px4_add_module.cmake 
+px4_add_module ,  详见 Firmware/cmake/px4_add_module.cmake
 
 ```cmake
 px4_add_module(
@@ -468,9 +547,7 @@ and add these examples under ./board/../default.cmake
 
 在 mavros 下 offb_node.cpp 中展示如何控制飞机(waypoints) 
 
-在切换到 offboard 模式前，setpoints 里面需要有信息。控制流程为
-
---> OFFBOARD --> ARM --> publish waypoints 
+在切换到 offboard 模式前，setpoints 里面需要有信息。控制流程为 --> OFFBOARD --> ARM --> publish waypoints 
 
 ## Mavlink
 
@@ -633,4 +710,3 @@ returned_count, buf);
 }   
 }   
 ```
-
