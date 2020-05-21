@@ -1,5 +1,3 @@
-写一些　cpp 中的用法
-
 # vector
 
 ## copy
@@ -46,8 +44,6 @@ p2.reset(p1); // 释放当前对象，并指向 p1
 
 ## boost::bind
 
-
-
 # C++
 
 ## 关键字
@@ -74,3 +70,26 @@ int *p = (int *) &i;
 *p <<= 1
 ```
 
+## 函数指针
+
+这里其实很像插件式设计，引用 AMCL 中的　AMCLLaser::UpdateSensor
+
+```c++
+// 申明函数指针
+typedef double (*pf_sensor_model_fn_t) (void* sensor_data, struct pf_sample_set_t* set);
+
+// definition
+double AMCL::BeamModel(AMCLLaser* data, pf_sample_set_t* set){
+    // ...
+}
+
+// function
+void pf_update_sensor(pf_t *pf, pf_sensor_model_fn_t sensor_fn, void* sensor_data){
+    // definition
+    // if you want to call the function :
+    (*sensor_fn)(pf, sensor_data);
+}
+
+// call
+pf_update_sensor(pf, (pf_sensor_model_fn_t) BeamModel, data);
+```

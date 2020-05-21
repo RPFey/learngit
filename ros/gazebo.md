@@ -61,11 +61,11 @@ namespace gazebo
 
 Load 中 _sdf是 导入的 sdf 文件，含有标签信息
 
-### model
+### model_plugin
 
 相关 API 在 gazebo physics。(注意 Model 类)
 
-apply speed and velocity to a model 
+apply speed and velocity to a model
 
 ```c++
 namespace gazebo
@@ -198,13 +198,14 @@ add mesh in geometry
            <parent>chassis</parent>
       </joint>
 ```
-## urdf  & sdf
+
+## urdf & sdf
 
 [sdf_reference](http://gazebosim.org/sdf)
 
-具体文件在 robot_sim_demo 下的　urdf/ *.urdf.xacro 中，　可以看到各个　frame　之间的转换 
+具体文件在 robot_sim_demo 下的　urdf/ *.urdf.xacro 中，　可以看到各个　frame　之间的转换
 
-udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中使用。 
+udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中使用。
 
 ```xml
 <!-- xacro 中的 "函数调用"-->
@@ -214,11 +215,9 @@ udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中�
 <xacro:default_link prefix="my" />
 ```
 
-
-
 文件基本构架：
 
-以 px4 为例，定义不同的飞机组件： iris\ rplidar\ lidar 
+以 px4 为例，定义不同的飞机组件： iris\ rplidar\ lidar
 
 再在一台具体飞机下确定使用哪些组件
 

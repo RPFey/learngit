@@ -1,6 +1,6 @@
 # ENV
 
-## to eclipse 
+## to eclipse
 
 catkin_make --force-cmake -G"Eclipse CDT4 - Unix Makefiles" DCMAKE_VUILD_TYPE=Debug -DCMAKE_ECLIPSE_MAKE_ARGUMENTS=-j8
 
@@ -26,7 +26,7 @@ tasks.json:
 
 ```json
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558 
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
@@ -53,7 +53,7 @@ launch.json:
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [ 
+    "configurations": [
         {
             "name": "(gdb) Launch",　　 // 配置名称，将会在调试配置下拉列表中显示
             "type": "cppdbg",　　　// 调试器类型 该值自动生成
@@ -78,8 +78,6 @@ launch.json:
 }
 ```
 
-
-
 ## python-interpreter
 
 指定解释器后会与ros 原有的解释器的 site-packages 路径冲突，因此在 导入一些外部包之前，
@@ -98,13 +96,13 @@ touch *.py
 
 在 Cmakelist.txt 中 ：
 
-```
+```cmake
 catkin_install_python(PROGRAMS
    py/hog-svm.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
- 
- catkin_python_setup() 
+
+ catkin_python_setup()
  # 如果提供了python 模块 （包含 setup.py） 加上。
 ```
 
@@ -112,9 +110,9 @@ catkin_install_python(PROGRAMS
 
 ### 指定解释器
 
-在虚拟环境下安装 
+在虚拟环境下安装
 
-pip install catkin-tools rospkg rospy 
+pip install catkin-tools rospkg rospy
 
 在执行 rosrun 之前激活这个环境
 
@@ -139,8 +137,6 @@ data = np.reshape(data, (..,..))
 
 自定义的 msg/srv 在生成的 dist-package 中会有类型，可以自己看看
 
-
-
 消息引用：
 
 ```python
@@ -150,27 +146,21 @@ img_msgs = sensor_msgs.msgs.Image()
 # 一般是作为一个类，类中属性的名称与 msg 一致
 ```
 
-
-
 ## problem
 
 编译时报错： /usr/bin/env 'python\r'
 
-这是由于文件在 windows 系统中重新编码过， 在linux 中多了一个 \r 
+这是由于文件在 windows 系统中重新编码过， 在linux 中多了一个 \r
 
 最好的方法就是直接从 github 上 clone
 
 或者在命令行输入 :%s/^M//%g
 
-
-
 PYTHONPATH 中一定要有指向系统 python2.7 dist-packages 的路径，否则会因为导入的 yaml 包不同而产生问题。（/usr/local/bin/python2.7/dist-packages）
-
-
 
 # ROS
 
-## 主要命令 
+## 主要命令
 
 rospack / rosnode / rosmsg / rosservice / rosmsg / rossrv / rosparam
 
@@ -194,11 +184,11 @@ manifest.xml 是 rosbuild 下的包描述。
 
 srv, msg , action 在包中放在相应文件夹下，作为自定义。
 
-*.luanch, *.yaml(配置文件)
+*.luanch*.yaml(配置文件)
 
-```
+```bash
 rospack find [package_name]
-rospack list 
+rospack list
 
 roscd [package_name]
 
@@ -214,21 +204,17 @@ rosdep install [package_name]  # 安装依赖  clone 下的pkg 需要安装， �
 rospack list | grep [...] # 可以过滤字符串
 ```
 
-
-
 不同package 之间引用，需要其余包的message, 源文件之类的。
 
 这都需要 find_package (... )
 
-对于前者，include (${catkin_INCLUDE_DIR}) 可以引用生成的message 头文件， 
+对于前者，include(${catkin_INCLUDE_DIR}) 可以引用生成的message 头文件，$
 
-对于后者， 可以在前者包中生成库文件(.so)，然后引用即可 
-
-
+对于后者， 可以在前者包中生成库文件(.so)，然后引用即可
 
 2020.1.15
 
-最近遇到一个与launch 有关的， roslaunch 时报错： 
+最近遇到一个与launch 有关的， roslaunch 时报错：
 
 invalid \<param>  tag : cannot load command parameter [rosversion] : returned with code [1]
 
@@ -240,7 +226,7 @@ invalid \<param>  tag : cannot load command parameter [rosversion] : returned wi
 
 Cmakelist 中并不生成 可执行文件，但是在package.xml 中会有其他包的运行依赖，便于安装
 
-# structure
+## system_structure
 
 master ,node 启动时向 master 申请， master  管理通信
 
@@ -254,9 +240,7 @@ launch 会自动 启动 roscore
 
 nh.param(name , value, default)  This method tries to retrieve the indicated parameter value from the parameter server, storing the result in param_val. If the value cannot be retrieved from the server, default_val is used instead.
 
-
-
-## topic 
+## topic
 
 异步通信
 
@@ -270,7 +254,7 @@ rostopic pub 发布消息时， 若遇到消息中的变量赋值
 
 这里新加入使用socket 传输。ros 通信其实是用msg 类中的 serialize 方法将消息序列化，发送出去。接收端deserialize 恢复成原来格式。注意： 接收端的缓存空间！
 
-ros 中　float32[] 可以用　vector 接受。而float32[9] 要用boost::array 接受。具体见　./learn opencv/cpp/cpp.md 中boost 库详解
+ros 中 float32[] 可以用vector 接受。而 float32[9] 要用boost::array 接受。具体见　./Program/cpp.md 中boost 库详解
 
 ## service
 
@@ -282,11 +266,11 @@ client 发布消息后， 会在原地等待 service , 远程过程调用 （PPC
 
 service 定义 ：
 
-... 
+...
 
 [request msg]
 
-/ -----
+\----
 
 ....
 
@@ -296,15 +280,13 @@ rossrv show [ rosservice info 下 type 后的类型]
 
 rosservice call [service-name] "param: value"
 
-
-
-## implementation
+#### implementation
 
 通过 gencpp,genpy 生成指定的文件，方便调用。
 
-在 CmakeList.txt 中： 
+在 CmakeList.txt 中：
 
-```
+```cmake
 add_message_files(...)
 add_service_files(...)
 ..
@@ -312,10 +294,8 @@ add_service_files(...)
 generate_messages()
 
 # 必须在 caikin_package 之前调用, catkin_package 的 CATKIN_DEPENDS 后加上 message_runtime
-# 必须在 find_package 中找 message_generation, 且在 package.xml 中加上编译依赖与运行依赖。
+# 必须在 find_package 中加入 message_generation, 且在 package.xml 中加上编译依赖与运行依赖。
 ```
-
-
 
 ## parameter server
 
@@ -333,8 +313,6 @@ param name='....' command="...[执行文件] ...[参数文件]"
 
 rosparam file="..."  command="load" 加载文件作为参数
 
-
-
 还有一个namespace 的概念 ：
 
 节点和话题都有自己的命名空间，一般情况下都在所在命名空间中进行通信， 还有对应的参数（和C++ 很像）
@@ -345,7 +323,7 @@ rosparam file="..."  command="load" 加载文件作为参数
 
 而 ros::NodeHandle nh('~') 代表私有的命名空间
 
-## .launch file
+## launch file
 
 in ros wiki roslaunch/XML
 
@@ -377,15 +355,15 @@ tf tree 之间必须保持联通。broadcaster 向关系中发布消息，确定
 
 /tf 下有多个节点发送消息
 
-eg. base_link to lidar 
+eg. base_link to lidar
 
 Transformstamped.msg
 
-指定从 frame_id -> child_frame_id 的变换 
+指定从 frame_id -> child_frame_id 的变换
 
 tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
 
-为上一数据结构的数组 
+为上一数据结构的数组
 
 c++ 直接 send Transform 发 vector 与 单个都可以
 
@@ -397,6 +375,14 @@ lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧�
 
 AMCL 定位 2D 概率定位系统 采用激光雷达等定位
 
+### 参数设置
+
+laser_z_* 传感器模型中的激光参数设置
+
+odom_alpha_* 里程计模型中参数
+
+odom_model_type 设置里程计的模型
+
 #### 代码解读
 
 AMCL Node 结构：
@@ -407,31 +393,43 @@ AMCL Node 结构：
 4. 地图处理
 5. 动态参数设置　(dynamic_reconfigure::Server)
 
-在　src/amcl/sensors/amcl_odom.cpp 里面有运动更新(AMCLOdom::UpdateAction), 对应(AMCLOdom::UpdateSensor) 观测更新。
+在　src/amcl/sensors/amcl_odom.cpp 里面有运动更新(AMCLOdom::UpdateAction). AMCLLaser::UpdateSensor 是激光的更新。
 
 粒子采用　pf_sample_t 动态数组维护，粒子集使用 _pf_sample_set_t 作为顶层粒子集的封装
 
 when draw randomly from a zero-mean Gauss Distribution, Use the polar form of the [Box-Muller Transformation](http://www.taygeta.com/random/gaussian.html)
 
 ```c++
-double pf_ran_gaussian(double sigma){
-	do
-	{
-		do{ r=drand48(); } while(r==0.0);
-		x1 = 2.0 * r - 1.0;
-		do{ r=drand48(); } while(r==0.0);
-		x2 = 2.0 * r - 1.0;
-		w = x1*x1 + x2*x2;
-	}while(w > 1.0 || w==0.0);
-	return(sigma*x2*sqrt(-2.0*log(w)/w));
-}
+    double pf_ran_gaussian(double sigma){
+        do
+        {
+            do{ r=drand48(); } while(r==0.0);
+            x1 = 2.0 * r - 1.0;
+            do{ r=drand48(); } while(r==0.0);
+            x2 = 2.0 * r - 1.0;
+            w = x1*x1 + x2*x2;
+        }while(w > 1.0 || w==0.0);
+        return(sigma*x2*sqrt(-2.0*log(w)/w));
+    }
 ```
+
+重点函数 laserReceived：
+
+1103-1144 是在记录是否有 base_link 到 laser_scan_frame_id 的变换，如果没有则在 lasers_ 中记录。lasers_ , frame_to_laser_ 两个构成索引的表。则直接在 frame_to_laser_ 中得到相应雷达变换的索引
+
+1147-1153 将 odom 到 base_frame 的变换，由轮式里程计提供（相当于机器人走过的路程）
+
+1158-1177 计算 pose 的变化， pose 是目前的位姿。(这里应该有外部提供了里程计信息), 这里 update 变量是为了防止移动距离过小（或者不移动）导致重采样失败引入。（具体见书重采样部分）
+
+1179-1195 初始化粒子滤波器(如果没有的话)
+
+1197-1214 运动更新部分（具体可以看笔记）
 
 ### mapping
 
-采用 gmapping 构建导航图，在rviz 中得到导航地图， ROS-Academy 中slam 有 gmapping launch 
+采用 gmapping 构建导航图，在rviz 中得到导航地图， ROS-Academy 中slam 有 gmapping launch
 
-rosrun map_server map_saver -f mymap 保存生成的地图 
+rosrun map_server map_saver -f mymap 保存生成的地图
 
 gmapping 订阅雷达数据和坐标（tf）并发布到 /map 话题上， OccupancyGrid.msg
 
@@ -445,17 +443,17 @@ tf 要求： laser -> base_link -> odom
 
 configure parameters:
 
- maxUrange : max usable data of range from lidar
+maxUrange : max usable data of range from lidar
 
- minimumScore : ? 
+minimumScore :
 
-### localization 
+### localization
 
 AMCL 定位；  蒙特卡洛定位
 
 先预先生成随机的位姿，通过机器人的移动，滤去不可能的位姿。
 
-### path planner
+### path_planner
 
 Naviagtion 导航，包括路径规划算法。
 
@@ -465,11 +463,11 @@ frame 中 data 直接是把图片压成一维了， width*height
 
 1. 重新定位机器人， 2D pose estimation
 
-2. set 2D nav goal 
+2. set 2D nav goal
 
-Navigation
+### Navigation
 
-move_base 中心节点， 中间的插件只需要指定算法即可。需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )。当move_base 接受到goal后会连接其它组件，最后发送/cmd_vel 
+move_base 中心节点， 中间的插件只需要指定算法即可。需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )。当move_base 接受到goal后会连接其它组件，最后发送/cmd_vel
 
 move_base 实际上是一个 action_server, 接受goal pose, 所以用 rviz 设置2D nav goal 实际上是发布了一条消息。
 
@@ -483,7 +481,7 @@ service : /make_plan 只提供路径，而不移动
 
 parameter:  对nav_fn costmap planner 的参数
 
-controller_frequency : 控制向base_controller 发送消息的频率。 
+controller_frequency : 控制向base_controller 发送消息的频率。
 
 Tolerance parameters : 机器人的位姿与设定的位姿相差的允许值。
 
@@ -491,13 +489,13 @@ sim_time : base_local_planner 估计路径的长短
 
 costmap
 
-两张： （global/local） ;  global planner 采用static map 进行路径规划， 不会对sensor 的数据处理。有三层； 
+两张： （global/local） ;  global planner 采用static map 进行路径规划， 不会对sensor 的数据处理。有三层；
 
-static layer : 订阅map topic ; obstacle layer : 动态添加，避障  ; inflation layer : 膨胀障碍物，确定机器人安全范围 
+static layer : 订阅map topic ; obstacle layer : 动态添加，避障  ; inflation layer : 膨胀障碍物，确定机器人安全范围
 
-local planner 在运动中会执行避障操作，并达到目的地。local planner 有不同选择 
+local planner 在运动中会执行避障操作，并达到目的地。local planner 有不同选择
 
-base_local_planner : 随机选择一些允许的位移，并计算每条位移的结果。选择结果最好的。; bwa_local_planner , 
+base_local_planner : 随机选择一些允许的位移，并计算每条位移的结果。选择结果最好的。; bwa_local_planner ,
 
 navfn(extension) , A* 迪杰斯特拉 / carrot planner , 可以根据障碍物设定
 
@@ -505,6 +503,6 @@ navfn(extension) , A* 迪杰斯特拉 / carrot planner , 可以根据障碍物�
 
 rgb-d slam package
 
-### pointcloud_to_laserscan ＆　depthimage_to_laserscan
+### pointcloud_to_laserscan ＆ depthimage_to_laserscan
 
-convert pointcloud data to laser scan data　
+convert pointcloud data to laser scan data

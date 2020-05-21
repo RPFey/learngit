@@ -98,15 +98,49 @@ class Binarized(torch.nn.Module):
 
 再继承 nn.Module， 实现 forward, 就与一般的神经网络层一致了
 
+在各层中监控输入输出　（hook 机制）
+
+```python
+def printnorm(self, input, output):
+    # input is a tuple of packed tensor
+    # output is a Tensor, whose data is the interest
+    print('input size : ', input[0].size()) # input[0] is the input tensor
+    
+net.conv2.register_forward_hook(printnorm) # when call forward, the function will be called
+
+def printgrad(self, grad_input, grad_output):
+    # input and output are tuples
+    print('grad_input size : ', grad_input[0].size())
+    print('grad_output size : ', grad_output[0].norm())
+    
+net.conv2.register_backward_hook(printgrad) 
+```
+
+训练时，有时会只训练一部分参数（分阶段训练），关于　requires_grad　官方文档
+>If there's a single input to an operation that requires gradient, its output will also require gradient. Conversely, only if all inputs don't require gradient, the output also won't require it.
+
+```python
+model = torchvision.models.resnet18(pretrained=True)
+for param in model.parameters():
+	param.requires_grad = False
+model.fc = nn.Linear(512,100)
+# optimize only the classifier
+optimizer = optim.SGD(model.fc.parameters(), lr=0.02)
+```
+
 # Multi-GPU 
+
 采用 "cuda:%d" 方法指定GPU
+
 ```python
 cuda1 = torch.device("cuda:1")
 data = data.to(cuda1)
 ```
 
 多线程：(具体教程见<https://pytorch.org/tutorials/intermediate/dist_tuto.html> 和 <https://mp.weixin.qq.com/s/hVcgcMYf9AaCHJ_2F-VyZQ> )
+
 1. pytorch.nn.distributed
+
 ```python
 # setup environment
 def setup(rank, world_size):
@@ -136,6 +170,7 @@ def average_gradient(model):
         dist.all_reduce_multigpu([param.grad.data], op=dist.ReduceOp.SUM)  # 将所有进程中 Tensor 求和并存储于个进程中
         param.grad.data /= size
 ```
+
 save and load : 初始化的时候，将一个线程中的模型随机初始化并保存，然后其余线程导入这个模型
 
 保存时，只需要保存一个线程中的模型 (一般为 rank 0)
@@ -163,6 +198,7 @@ local_rank : 每个进程内 GPU 编号, 由 torch.distributed.launch 决定
 ## TCP 初始化
 
 不同主机上多 GPU 训练(TCP 方式)：
+
 ```python
 import torch.distributed as dist
 import torch.utils.data.distributed
@@ -177,7 +213,9 @@ parser.add_argument('--init_method', default='tcp://127.0.0.1:23456',
                     help="init-method")
 args = parser.parse_args()
 
-# 初始化组中第rank个进程, icp 方法下所有 ip:port 必须与主进程保持一致 
+# 初始化组中第rank个进程, icp 方法下所有 ip:port 必须与主进程保持一致
+if mp.get_start_method(allow_none=True) is None:
+    mp.set_start_method('spawn')
 dist.init_process_group(backend='nccl', init_method=args.init_method, rank=args.rank, world_size=args.word_size)
 
 # the sampler process, DS 将数据集划分为几个互不相交的子集
@@ -225,9 +263,11 @@ net = torch.nn.parallel.DistributedDataParallel(net, device_ids=[args.local_rank
 ```
 
 启动方式
+
 ```bash
 python -m torch.distributed.launch --nproc_per_node=2 --nnodes=3 --node_rank=0 --master_addr="192.168.1.201" --master_port=23456 env_init.py
 ```
+
 创建 nnodes 个node, 每个 node 有 nproc_per_node 个进程(一般为 GPU 数量)，每个进程独立执行脚本训练。 node rank 确定节点的优先级, 以 0 为主节点，使用其 addr:port 作为 master 的参数 (可以用为局域网内训练), 会自动分配 node 内的各线程优先级 (local_rank)
 
 ## 可选后端
@@ -320,6 +360,8 @@ for param in net.parameters():
     print("param", param)
 ```
 
+named_parameters() 会返回模型中所有　parameters　的名称和参数。有时候用 ModuleDict 或者是属性调用也可以指定操作。
+
 ### convolution
 
 nn.Module(nn.Parameter 只是Tensor 的派生)
@@ -386,8 +428,18 @@ convert to torchscript and use cpp to deploy
 
 # 实际编写
 
-比如在计算$ |\vec{x_{tar}} - \vec{x_{cur}}|^{2} $ , 采用如下化简：
-$$ |\vec{x_{tar}} - \vec{x_{cur}}|^{2} = \vec{x_{tar}}^{T} \vec{x_{tar}} - 2 * \vec{x_{tar}}^{T} \vec{x_{cur}} + \vec{x_{cur}}^{T} \vec{x_{cur}} $$
+比如在计算
+
+$$
+|\vec{x_{tar}} - \vec{x_{cur}}|^{2}
+$$
+
+采用如下化简：
+
+$$
+|\vec{x_{tar}} - \vec{x_{cur}}|^{2} = \vec{x_{tar}}^{T} \vec{x_{tar}} - 2 * \vec{x_{tar}}^{T} \vec{x_{cur}} + \vec{x_{cur}}^{T} \vec{x_{cur}} 
+$$
+
 ```python
 # des_tar , des_cur 代表两帧的描述子 N*256
 # terrible ways:

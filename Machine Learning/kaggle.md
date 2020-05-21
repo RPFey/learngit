@@ -27,6 +27,26 @@ X = data[features]
 X.head(n)
 ```
 
+# Scipy
+
+* scipy.spatial.Delaunay
+
+寻找位于凸多边形内的点
+
+```python
+def in_hull(p, hull):
+    '''
+    p : points (N, 3)
+    hull : 多边形的顶点 (8, 3)
+    '''
+    from scipy.spatial import Delaunay
+    if not isinstance(hull,Delaunay):
+        hull = Delaunay(hull)
+    return hull.find_simplex(p)>=0
+
+# 这里是将这个多面体划分为多个四面体，find_simplex 是找位于其中的点，并返回其所属的索引，若该点不在任何四面体中，则是 -1
+```
+
 # sklearn
 
 ## random forest
@@ -73,6 +93,6 @@ scores = {leaf_size: get_mae(leaf_size, train_X, val_X, train_y, val_y) for leaf
 best_tree_size = min(scores, key=scores.get) # 传入字典的 get 方法作为比较的准则
 ```
 
-![avatar](./img/overfit_vs_underfit.png)
+![avatar](../img/overfit_vs_underfit.png)
 
 find the lowest point of the validation curve

@@ -321,9 +321,7 @@ gps_main(int argc, char *argv[])
 {
 return GPS::main(argc, argv);
 }
-/* 　在 main 中会调用一个 start_command_base 启用一个线程GPS 中的 task_spawn 有两种模式 MAIN, SECONDARY;
-
-    对于 MAIN ， 入口函数 run_trampoline 在基类中定义， 调用run 函数， 另一个在 gps.cpp 下重新定义了*/
+/* 　在 main 中会调用一个 start_command_base 启用一个线程GPS 中的 task_spawn 有两种模式 MAIN, SECONDARY;对于 MAIN ， 入口函数 run_trampoline 在基类中定义， 调用run 函数， 另一个在 gps.cpp 下重新定义了*/
 
 // 教程， 创建后台进程
 static int _running = 0; // 标志符
@@ -646,26 +644,26 @@ exec()函数族 进程调用另外一个程序，此时子进程死亡，而且�
 char command[256];   
 void main()   
 {   
-int rtn; /*子进程的返回数值*/   
-while(1) {   
+	int rtn; /*子进程的返回数值*/   
+	while(1) {   
 /* 从终端读取要执行的命令 */   
-printf( ">" );   
-fgets( command, 256, stdin );   
-command[strlen(command)-1] = 0;   
-if ( fork() == 0 ) {   
-/* 子进程执行此命令 */   
+		printf( ">" );   
+		fgets( command, 256, stdin );   
+		command[strlen(command)-1] = 0;   
+		if ( fork() == 0 ) {   
+ /* 子进程执行此命令 */   
  // 此处采用 execlp 是函数族中一个
-execlp( command, command );   
+			execlp( command, command );   
 /* 如果exec函数返回，表明没有正常执行命令，打印错误信息*/   
-perror( command );   
-exit( errorno );   
-}   
-else {   
+			perror( command );   
+			exit( errorno );   
+		}   
+		else {   
 /* 父进程， 等待子进程结束，并打印子进程的返回值 */   
-wait ( &rtn );   
-printf( " child process return %d/n",. rtn );   
-}   
-}   
+			wait ( &rtn );   
+			printf( " child process return %d/n",. rtn );   
+		}   
+	}   
 }  
 ```
 
@@ -680,33 +678,33 @@ printf( " child process return %d/n",. rtn );
 #define OUTPUT 1   
   
 void main() {   
-int file_descriptors[2];   
+	int file_descriptors[2];   
 /*定义子进程号 */   
-pid_t pid;   
-char buf[256];   
-int returned_count;   
+	pid_t pid;   
+	char buf[256];   
+	int returned_count;   
 /*创建无名管道*/   
-pipe(file_descriptors);   
+	pipe(file_descriptors);   
 /*创建子进程*/   
-if((pid = fork()) == -1) {   
-printf("Error in fork/n");   
-exit(1);   
-}   
+	if((pid = fork()) == -1) {   
+		printf("Error in fork/n");   
+		exit(1);   
+	}   
 /*执行子进程*/   
-if(pid == 0) {   
-printf("in the spawned (child) process.../n");   
+	if(pid == 0) {   
+		printf("in the spawned (child) process.../n");   
 /*子进程向父进程写数据，关闭管道的读端*/   
-close(file_descriptors[INPUT]);   
-write(file_descriptors[OUTPUT], "test data", strlen("test data"));   
-exit(0);   
-} else {   
+		close(file_descriptors[INPUT]);   
+		write(file_descriptors[OUTPUT], "test data", strlen("test data"));   
+		exit(0);   
+	} else {   
 /*执行父进程*/   
-printf("in the spawning (parent) process.../n");   
+		printf("in the spawning (parent) process.../n");   
 /*父进程从管道读取子进程写的数据，关闭管道的写端*/   
-close(file_descriptors[OUTPUT]);   
-returned_count = read(file_descriptors[INPUT], buf, sizeof(buf));   
-printf("%d bytes of data received from spawned process: %s/n",   
-returned_count, buf);   
-}   
+		close(file_descriptors[OUTPUT]);   
+		returned_count = read(file_descriptors[INPUT], buf, sizeof(buf));   
+		printf("%d bytes of data received from spawned process: %s/n",   
+		returned_count, buf);   
+	}   
 }   
 ```

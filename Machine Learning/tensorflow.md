@@ -4,52 +4,45 @@
 
 export TF_CPP_MIN_LOG_LEVEL=2
 
-tensorflow 构建运算图，并不直接计算，表示计算任务，图中的节点表示计算任务(operation,op)
+# 变量
 
-在 session (context) 中执行图
-
-Variable 维护状态
-
-eg.  y = a+b   只会生成一张图，而不会得到结果
-
-构建会话后才会执行计算，也就是操作产生的影响只会在 sess.run(op) 之后才会产生；比
-较坑的地方在于只能获得最后一步的结果，看不到中间的结果。
-
-with tf.Session() as sess :
-
-​	sess.run(y)
-
-或者
-
-sess = tf.Session()
-
-result = sess.run(y)
-
-sess.close()
-
-# Variable
-
-tf.Variable() 与 tf.constant()
+## tf.Variable()
 
 variable 在 会话中计算时需要初始化 
 
+```python
 init = tf.global_variables_initializer()
-
 with tf.Session() as sess:
-
-​	sess.run(init)
-
-​	....
+    sess.run(init)
+	....
+```
 
 变量 和 op 有 name 参数，可以命名
 
-会话中赋值  tf.assign(a,b) —— 将 b 赋值给 a , 且返回是一个 op
+会话中赋值  tf.assign(a,b) —— 将 b 赋值给 a , 且返回是一个 op eg.
 
-update = tf.assign(a,b) 
+```python
+self.epoch_add_op = self.epoch.assign(self.epoch + 1) # epoch 自加操作
+```
 
-sess.run(update)   才会执行赋值这个操作
+感觉 tf.Variable 就像一般变量一般，经常声明。
 
-## fetch&feed
+## gradient
+
+如果对梯度有什么操作的话，可以构建如下图:
+
+```python
+self.params = tf.trainable_variables() # get all the trainable gradients
+gradients = tf.gradients(self.loss, self.params)  # 相当于是求梯度的操作
+clipped_gradients, gradient_norm = tf.clip_by_global_norm(
+	gradients, max_gradient_norm)
+```
+
+这里是对所有参数的梯度进行一次放缩到 max_gradient_norm 。详细可见 [Pascau et al., 2012](http://arvix.org/abs/1211.5063.pdf)
+
+
+
+## fetch & feed
 
 sess.run([op1,op2,...])
 
@@ -76,8 +69,10 @@ sess.run(tf.initialize_all_variables())
 for i in range(batch_size) :
     batch_x = ...
     batch_y = ...
-    sess.run(train_step, freed_dict={... : batch_x, ...:batch_ys})
+    sess.run(train_step, feed_dict={... : batch_x, ...:batch_ys})
 ```
+
+这个算是比较常见的，从 Dataset 类中提取数据，然后做成 feed_dict 喂入。
 
 ## 读取机制
 
@@ -114,17 +109,26 @@ self.data_batch = tf.train.shuffle_batch([
 
 # loss function
 
-optimizer 
+## optimizer
+
 ```python
-optimizer=tf.train.GradientDescent(0.2) --> learning rate
+optimizer=tf.train.GradientDescent(0.2) # --> learning rate
 train = optimizer.minimize(loss)
 with tf.Session() as sess :
-​	sess.run(train)
+    sess.run(train)
 ```
 
-logistic regression
+当然了，如果想要指定步长，在不同区间里面有不同的 learning rate,
 
-least-square :
+```python
+boundaries = [80, 120]
+values = [ self.learning_rate,  self.learning_rate*0.1, self.learning_rate*0.01]
+# values 中的值可以是浮点数或者 Variable
+lr = tf.train.piecewise_constant(self.epoch, boundaries, values) # epoch 必须是 Variable
+self.opt = tf.train.AdamOptimizer(lr) # optimzer
+```
+
+## least-square
 
 ``` python
 loss  = tf.reduce_mean(tf.square(y_data-y))
@@ -136,20 +140,24 @@ loss  = tf.reduce_mean(tf.square(y_data-y))
 
 在会话中运行。
 
-softmax regression & cross entropy
+## softmax regression & cross entropy
 
 ```python
-y = tf.nn.softmax(x) 
+y = tf.nn.softmax(x)
 ```
+
 cross entropy :
+$$
+H_{y'}(y) = -\sum(y_{i}'log(y_i))
+$$
 
-$H_{y'}(y) = -\sum(y_{i}'log(y_i))$
+$$
+y_{i}' 为实际概率值而y_{i}为预测值
+$$
 
-$y_{i}' 为实际概率值而y_{i}为预测值$
 ```python
 cross_entropy = -tf.reduce_sum(y_*tf.log(y))
 ```
-
 
 # Module 
 
@@ -161,7 +169,7 @@ net = slim.conv2d(input, 32, [3,3])
 # 直接定义卷积层
 
 # 采用 arg_scope() 批量定义：
-with slim.arg_scope([slim.con2d], 
+with slim.arg_scope([slim.conv2d], # 列表中是指调用哪些层
                     weights_regularizer = slim.l2_regularizer(0.0004),
                     activation_function = leaky_relu,
                     reuse = True) # 等
@@ -171,31 +179,55 @@ with slim.arg_scope([slim.con2d],
 # 所有层都会具有 leaky_relu , l2_regularizer
 ```
 
+## save and load model
+
+```python
+class Model(object):
+    def __init__(self):
+        self.saver = tf.train.Saver(write_version=tf.train.SaverDef.v2,
+                                   max_to_keep=10, pad_step_number=True,
+                                    keep_checkpoint_every_n_hours=1.0)
+
+model = Model()
+model.saver.restore(sess, tf.train.lastest_checkpoint(save_model_dir)) # load model
+
+model.saver.save(sess, os.path.join(save_model_dir, 'checkpoint'), global_step=model.global_step) # save model
+```
+
+这些都应该是在 sess 建立好之后。
+
 # operation
 
 matmul(a,b) 矩阵乘法
 
-tf.equal 判断元素是否相等， 返回布尔类型tensor
+tf.equal 判断元素是否相等， 返回布尔类型tensor; 相对的是 tf.not_equal . 这两个操作常用来作为 mask
+
+```python
+mask = tf.not_equal(tf.reduce_max(
+        self.features, axis=2, keep_dims=True), 0)
+```
 
 tf.cast(.. , dtype) 转变类型
 
-tf.reduce_mean(..) 获得平均值
+tf.reduce_mean(..) 获得平均值 / tf.reduce_max 获得最大值。
 
 tf.split(value, num_or_size_split, axis, num=None, name='split') : 将 Tensor 在指定维度上划分
 
-tf.cond(pred, fn1, fn2) <==> if pred, do fn1; else fn2
+tf.cond(pred, fn1, fn2) \<==\> if pred, do fn1; else fn2
 
-tf.set_shape()  相当于 reshape ; tf.stack([...]) 合并 ； tf.matrix_inverse 逆矩阵 ； 
+tf.set_shape()  相当于 reshape ; tf.stack([...]) 合并 ； tf.matrix_inverse 逆矩阵 ；
 
 tf.pad(tensor, padding)  在 tensor 上打补丁, padding=[[d1, d2],[d11, d22],[d21, d22]] 分别对应各个维度前后打多少。
 
+tf.slice(input, begin, size, name=None) 在 input 张量上截取。 begin[i] 代表第 i 个唯独上的 offset, size[i] 代表第 i 个维度上截取的数量
+
 # Visualization
 
-name_scope & variable_scope
+## name_scope & variable_scope
 
 name_scope() 与 Variable() 使用，是为了管理变量的命名空间提出，在 tensorboard 中显示。
 
-variable_scope() 与 get_variable() 使用，实现变量的共享。get_variable() 搜索相应的变量名称，如果没有会新建，有则提取同样名字的变量。
+variable_scope() 与 get_variable() 使用，实现变量的共享，即重复使用同一张网络。get_variable() 搜索相应的变量名称，如果没有会新建，有则提取同样名字的变量。
 
 get_trainable() 获得所有训练参数列表。get_collection(tf.Graphkeys.TRAIANABLE_VARIABLES, scope="...") scope 可以使用正则表达式。
 
@@ -209,3 +241,89 @@ feature1 = feature_pyramid_flow(image1, reuse=False)
 feature2 = feature_pyramid_flow(image2, reuse=True)
 # feature 经过相同的网络， 在函数中设置为 reuse
 ```
+
+2. VoxelNet 中设计 VEF 层
+
+```python
+class FeatureNet(object):
+    def __init__(self):
+        # other parameters here
+        self.features = tf.place_holder(tf.float32, [None, cfg.VOXEL_COUNT, 7], name='features') # 输入是 N * T * 7
+        
+        with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
+            self.vfe1 = VEFLayer(32, 'VFE-1')
+            self.vfe2 = VEFLayer(128, 'VFE-2') # 这两步相当于构建 VFE 层图
+        mask = tf.not_equal(tf.reduce_max(
+        	self.features, axis=2, keep_dims=True), 0) 
+        # self.features 由之前的place_holder 表示
+        x = self.vfe1.apply(self.features, mask, self.training) 
+        x = self.vfe2.apply(x, mask, self.training) # 构建输入, N * T * 128
+        
+        voxelwise = tf.reduce_max(x, axis=1) # N * 128
+        self.outputs = tf.scatter_nd(
+        	self.coordinate, voxelwise, [self.batch_size, 10, cfg.INPUT_HEIGHT, cfg.INPUT_WIDTH, 128]) # 这里 outputs 是构建的运算，外部用 feature.outputs　获取。
+        
+        
+class VFElayer(object):
+    def __init__(self, out_channel, name):
+        super(VFELayer,self).__init__()
+        self.units = int(out_channel / 2)
+        with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope: 
+            # 这里就是在上一级上加一个'VFE-1/'目录
+            self.dense = tf.layers.Dense(self.units, tf.nn.relu, 
+                                         name='dense', _reuse=tf.AUTO_REUSE, _scope=scope)
+            self.batch_norm = tf.layers.BatchNormalization(
+            	name='batch_norm', fused=True, _reuse=tf.AUTO_REUSE, _scope=scope)
+            # 这两个相当于 '/VFE-1/dense' 与 'VFE-1/batch_norm'
+            
+    def apply(self, inputs, mask, training):
+        pointwise = self.batch_norm.apply(self.apply(inputs), training)
+        # tf layer 用 apply 当作 forward
+        aggregated = tf.reduce_max(pointwise, axis=1, keep_dims=True)
+        repeated = tf.tile(aggregated, [1, cfg.VOXEL_COUNT, 1])
+        concatenate = tf.concat([pointwise, repeated], axis=2)
+        mask = tf.tile(mask, [1, 1, 2*self.units])
+        return tf.multiply(concatenated, tf.cast(mask, tf.float32))
+    
+```
+
+   
+
+## tensorboard
+
+
+
+# Multi-GPU & distributed training
+
+```python
+gpu_options = tf.GPUOptions(pre_process_gpu_memory_fraction=cfg.GPU_MEMORY_FRACTION, # 1
+                           visible_device_list=cfg.GPU_AVAILABLE,　# '0,1'
+                           allow_growth=True)
+
+config = tf.ConfigProto(gpu_options=gpu_options,
+                       device_count={
+                           "GPU":cfg.GPU_USE_COUNT, # number of GPUs
+                       },
+                       allow_soft_placement=True)
+
+with tf.Session(config=config) as sess:
+    # training procedure
+```
+
+GPUOptions :
+
+* pre_process_gpu_memory_fraction : 每块GPU 使用显存上限的百分比。
+* visible_device_list : 使用 GPU 的 ID 号
+* allow_growth : 分配器将不会指定所有的GPU内存而是根据需求增长，但是由于不会释放内存，所以会导致碎片
+
+ConfigProto : 
+
+* log_device_placement=True ： 是否打印设备分配日志
+
+* allow_soft_placement=True ： 如果你指定的设备不存在，允许TF自动分配设备
+
+* inter_op_parallelism_threads=0：设置线程一个操作内部并行运算的线程数，如果设置为０，则表示以最优的线程数处理
+
+* intra_op_parallelism_threads=0：设置多个操作并行运算的线程数
+
+在具体训练时，需要在各GPU 上分别建立网络训练，然后在各GPU之间平均梯度。（具体见 UndepthFlow）

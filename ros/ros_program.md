@@ -61,7 +61,25 @@ tf2_ros::Buffer() // 作为一个存储，记录了 tf tree, 能够在frame 间�
 
 tf2_ros::BufferInterface() // Buffer 的基类
 
-BufferInterface::transform(in, out, frame_id) //Transform an input into the target frame. The output is preallocated by the caller. 
+BufferInterface::transform(in, out, frame_id) //Transform an input into the target frame. The output is preallocated by the caller.
+
+// 在定义了　tf2_ros::Buffer　(tf_) 之后
+tf2::Quaternion q;
+q.setRPY(0.0, 0.0, laser_scan->angle_min);
+geometry_msgs::QuaternionStamped min_q;
+min_q.header.stamp = laser_scan->header.stamp;
+min_q.header.frame_id = laser_scan->header.frame_id;
+tf2::convert(q, min_q.quaternion);
+
+try{
+  tf_->transform(min_q, min_q, base_frame_id_); //base_frame_id_ is the target frame
+}
+catch (tf2::TransformException& e){
+  ROS_WARN(".... %s", e.what());
+}
+// convert the angle to base frame
+
+double angle_min = tf2::getYaw(min_q.quaternion);
 ```
 
 functions in tf2 namespace:
