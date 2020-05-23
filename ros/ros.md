@@ -148,8 +148,6 @@ img_msgs = sensor_msgs.msgs.Image()
 # 一般是作为一个类，类中属性的名称与 msg 一致
 ```
 
-
-
 ## problem
 
 编译时报错： /usr/bin/env 'python\r'
@@ -160,15 +158,11 @@ img_msgs = sensor_msgs.msgs.Image()
 
 或者在命令行输入 :%s/^M//%g
 
-
-
 PYTHONPATH 中一定要有指向系统 python2.7 dist-packages 的路径，否则会因为导入的 yaml 包不同而产生问题。（/usr/local/bin/python2.7/dist-packages）
-
-
 
 # ROS
 
-## 主要命令 
+## 主要命令
 
 rospack / rosnode / rosmsg / rosservice / rosmsg / rossrv / rosparam
 
@@ -194,9 +188,9 @@ srv, msg , action 在包中放在相应文件夹下，作为自定义。
 
 *.luanch, *.yaml(配置文件)
 
-```
+```bash
 rospack find [package_name]
-rospack list 
+rospack list
 
 roscd [package_name]
 
@@ -212,8 +206,6 @@ rosdep install [package_name]  # 安装依赖  clone 下的pkg 需要安装， �
 rospack list | grep [...] # 可以过滤字符串
 ```
 
-
-
 不同package 之间引用，需要其余包的message, 源文件之类的。
 
 这都需要 find_package (... )
@@ -221,8 +213,6 @@ rospack list | grep [...] # 可以过滤字符串
 对于前者，include (${catkin_INCLUDE_DIR}) 可以引用生成的message 头文件， 
 
 对于后者， 可以在前者包中生成库文件(.so)，然后引用即可 
-
-
 
 2020.1.15
 
@@ -240,7 +230,7 @@ Cmakelist 中并不生成 可执行文件，但是在package.xml 中会有其他
 
 # structure
 
-master ,node 启动时向 master 申请， master  管理通信
+master ,node 启动时向 master 申请， master 管理通信。 ros 运行必需 ros master / ros parameter server / rosout (logging mode)
 
 ## node
 
@@ -252,9 +242,7 @@ launch 会自动 启动 roscore
 
 nh.param(name , value, default)  This method tries to retrieve the indicated parameter value from the parameter server, storing the result in param_val. If the value cannot be retrieved from the server, default_val is used instead.
 
-
-
-## topic 
+## topic
 
 异步通信
 
@@ -270,6 +258,10 @@ rostopic pub 发布消息时， 若遇到消息中的变量赋值
 
 ros 中　float32[] 可以用　vector 接受。而float32[9] 要用boost::array 接受。具体见　./learn opencv/cpp/cpp.md 中boost 库详解
 
+## bag
+
+a .bag file records all the message in a topic. [More_Information](http://wiki.ros.org/rosbag/Commadline). rqt_bag to handle the bag files.
+
 ## service
 
 ‘’相当于间断的发布消息‘’
@@ -280,7 +272,7 @@ client 发布消息后， 会在原地等待 service , 远程过程调用 （PPC
 
 service 定义 ：
 
-... 
+...
 
 [request msg]
 
@@ -294,15 +286,13 @@ rossrv show [ rosservice info 下 type 后的类型]
 
 rosservice call [service-name] "param: value"
 
-
-
 ## implementation
 
 通过 gencpp,genpy 生成指定的文件，方便调用。
 
-在 CmakeList.txt 中： 
+在 CmakeList.txt 中：
 
-```
+```CMake
 add_message_files(...)
 add_service_files(...)
 ..
@@ -313,25 +303,29 @@ generate_messages()
 # 必须在 find_package 中找 message_generation, 且在 package.xml 中加上编译依赖与运行依赖。
 ```
 
-
-
 ## parameter server
 
-存储参数字典 ， 存储配置
+存储参数字典， 存储配置
 
-rosparam 查看
+rosparam 在运行过程中动态操作。
 
 launch 文件中：
 
-param name="..." value="..."
+```xml
+<param name="..." value="..."/>
 
-param name='....' command="...[执行文件] ...[参数文件]"
+<param name='....' command="...[执行文件] ...[参数文件]"/>
 
-可执行文件得到参数文件作为参数后返回的值作为 param 的值
+<!--可执行文件得到参数文件作为参数后返回的值作为 param 的值-->
 
-rosparam file="..."  command="load" 加载文件作为参数
+<rosparam file="..."  command="load"/> 加载文件作为参数
 
-
+<!--
+    the parameter file in yaml format:
+    /camera/name : 'nikon' #string type
+    /camera/fps : 30 #integer
+    -->
+```
 
 还有一个namespace 的概念 ：
 
@@ -342,6 +336,12 @@ rosparam file="..."  command="load" 加载文件作为参数
 \__name:= ...     ;  __ns:=.....
 
 而 ros::NodeHandle nh('~') 代表私有的命名空间
+
+## action
+
+[参考](https://github.com/RPFey/Mastering-ROS-for-Robotics-Programming-Second-Edition)
+
+注意： CMake 中编写的选项，**添加的依赖**
 
 ## .launch file
 
@@ -389,8 +389,6 @@ c++ 直接 send Transform 发 vector 与 单个都可以
 
 lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧的
 
-
-
 ## slam
 
 AMCL 定位 2D 概率定位系统 采用激光雷达等定位
@@ -415,17 +413,13 @@ configure parameters:
 
  maxUrange : max usable data of range from lidar
 
- minimumScore : ? 
-
-
+ minimumScore :
 
 ### localization 
 
 AMCL 定位；  蒙特卡洛定位
 
 先预先生成随机的位姿，通过机器人的移动，滤去不可能的位姿。
-
-
 
 ### path planner
 
@@ -478,7 +472,8 @@ navfn(extension) , A* 迪杰斯特拉 / carrot planner , 可以根据障碍物�
 rgb-d slam package
 
 ### pointcloud_to_laserscan ＆　depthimage_to_laserscan
-convert pointcloud data to laser scan data　
+
+convert pointcloud data to laser scan data
 
 ### ros&opencv
 
@@ -547,7 +542,7 @@ Load functions create pointers and set it to sensors
 gzserver -s <plugin_filename>
 ```
 
-plugins 分为： world, model, sensor, system, visual, gui
+plugins 分为： world, model, sensor, system, visual, gui ; check [here](https://bitbucket.org/osrf/gazebo) for more examples
 
 ```c++
 #include <gazebo/gazebo.hh>
