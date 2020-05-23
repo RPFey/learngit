@@ -68,7 +68,6 @@ P8    P1     P4
 
 P7     P6    P5
 
-
 其中 N(p1) = 4, S(P1) = 3, P2*P4*P6=0*0*0=0, P4*P6*P8=0*0*1=0, 不符合条件，无需标记为删除。
 
 Step Two：跟Step One很类似，条件1、2完全一致，只是条件3、4稍微不同，满足如下条件的像素P1则标记为删除，条件如下：
@@ -83,13 +82,15 @@ Step Two：跟Step One很类似，条件1、2完全一致，只是条件3、4稍
 
 循环上述两步骤，直到两步中都没有像素被标记为删除为止，输出的结果即为二值图像细化后的骨架。
 
-关键在于采用 编码的方式 卷积核选择为 
+关键在于采用 编码的方式 卷积核选择为
 
 1   2    4
 
-8   0    16 
+8   0    16
 
-32  64  128    这样每一种情况对应一个单独的数，采用计算机枚举的方法判断所有情况。
+32  64  128
+
+这样每一种情况对应一个单独的数，采用计算机枚举的方法判断所有情况。
 
 ## calcbackproject :
 
@@ -117,13 +118,13 @@ res = cv.bitwise_and(target,thresh)
 
 opencv 实现方法 ： 在 test image 中的一个 pixel 得到 color information, 寻找其在 test image histgram 中所在的 bin (h, s). 再在 model image 中找到对应的 bin (h, s) 将其值写入 output 中对应点 (x, y) 中。这样相当于基于统计，得到该像素在 model image 中的概率。
 
-## haar cascade:
+## haar cascade
 
 ### opencv_tools
 
 安装opencv 时带有一些可以用来训练 haar cascade 的工具：
 
-opencv_createsamples : 
+opencv_createsamples :
 
 -vec  <vec_file_name>   产生*.vec 文件 保存了对positive images 的信息
 
@@ -139,7 +140,7 @@ The object instances are taken from the given images, by cutting out the supplie
 
 （此命令也可以用来将一张图叠加到negative images生成大量的positive images ， 采用下面参数:)
 
--maxidev  ...   -maxxangle  ... 
+-maxidev  ...   -maxxangle  ...
 
 利用 demo 中的 detectmulti 和 读取 xml 接口 来完成。
 
@@ -149,17 +150,10 @@ save 模型时 ， 有 process finished with exit code 139
 
 这是因为写地址溢出了，只需要把 .xml 删掉再写就可以了
 
-关于装载模型的问题， 
+关于装载模型的问题，
 
 ```python
 svm = cv2.ml.SVM_load(cv2.samples.findFile('./svm.xml'))
 ```
 
 这里采取 与 haar cascade 相同的装载方法，且要求版本为 4.1 以上。
-
-
-
-
-
-
-

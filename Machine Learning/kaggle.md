@@ -1,11 +1,11 @@
-# model 
+# model
 
 decision tree : use character of data to build a decision tree. Make predictions according to this tree.
 
-# pandas 
+# pandas
 
 ```python
- # read files 
+ # read files
  data = pd.read_csv("path_to_csv")
  data.describe()
 ```
@@ -23,12 +23,33 @@ y = data.Price   # the Price column
 features = ['Rooms', 'Bathroom', 'Landsize', 'Lattitude', 'Longtitude'] 
 # string is necessary
 X = data[features]
-# check first n data 
+# check first n data
 X.head(n)
 ```
+
+# Scipy
+
+* scipy.spatial.Delaunay
+
+寻找位于凸多边形内的点
+
+```python
+def in_hull(p, hull):
+    '''
+    p : points (N, 3)
+    hull : 多边形的顶点 (8, 3)
+    '''
+    from scipy.spatial import Delaunay
+    if not isinstance(hull,Delaunay):
+        hull = Delaunay(hull)
+    return hull.find_simplex(p)>=0
+
+# 这里是将这个多面体划分为多个四面体，find_simplex 是找位于其中的点，并返回其所属的索引，若该点不在任何四面体中，则是 -1
+```
+
 # sklearn
 
-## random forest 
+## random forest
 
 construct many trees and make predictions as the average of these trees
 
@@ -47,9 +68,10 @@ model = DecisionTreeRegressor(random_state = 1)
 model.fit(X, y)
 prediction = model.predict(X.head()) # X is also right
 ```
-初始化时可选参数 ： 
 
-max_leaf_node : 控制模型大小 
+初始化时可选参数 ：
+
+max_leaf_node : 控制模型大小
 
 ## validation
 
@@ -60,7 +82,7 @@ from sklearn.metrics import mean_absolute_error
 mean_absolute_error(y, model.predict(X))
 ```
 
-validation set 
+validation set
 
 ```python
 from sklearn.model_selection import train_test_split
@@ -71,6 +93,6 @@ scores = {leaf_size: get_mae(leaf_size, train_X, val_X, train_y, val_y) for leaf
 best_tree_size = min(scores, key=scores.get) # 传入字典的 get 方法作为比较的准则
 ```
 
-![avatar](./img/overfit_vs_underfit.png)
+![avatar](../img/overfit_vs_underfit.png)
 
 find the lowest point of the validation curve

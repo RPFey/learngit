@@ -1,6 +1,6 @@
 # ENV
 
-## to eclipse 
+## to eclipse
 
 catkin_make --force-cmake -G"Eclipse CDT4 - Unix Makefiles" DCMAKE_VUILD_TYPE=Debug -DCMAKE_ECLIPSE_MAKE_ARGUMENTS=-j8
 
@@ -26,7 +26,7 @@ tasks.json:
 
 ```json
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558 
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
@@ -53,7 +53,7 @@ launch.json:
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [ 
+    "configurations": [
         {
             "name": "(gdb) Launch",　　 // 配置名称，将会在调试配置下拉列表中显示
             "type": "cppdbg",　　　// 调试器类型 该值自动生成
@@ -78,8 +78,6 @@ launch.json:
 }
 ```
 
-
-
 ## python-interpreter
 
 指定解释器后会与ros 原有的解释器的 site-packages 路径冲突，因此在 导入一些外部包之前，
@@ -98,13 +96,13 @@ touch *.py
 
 在 Cmakelist.txt 中 ：
 
-```
+```cmake
 catkin_install_python(PROGRAMS
    py/hog-svm.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
- 
- catkin_python_setup() 
+
+ catkin_python_setup()
  # 如果提供了python 模块 （包含 setup.py） 加上。
 ```
 
@@ -112,15 +110,17 @@ catkin_install_python(PROGRAMS
 
 ### 指定解释器
 
-在虚拟环境下安装 
+在虚拟环境下安装
 
-pip install catkin-tools rospkg rospy 
+pip install catkin-tools rospkg rospy
 
 在执行 rosrun 之前激活这个环境
 
 在 *.py  第一行：
 
+```python
 #!/usr/bin/env python3
+```
 
 ## 消息传输
 
@@ -137,8 +137,6 @@ data = np.reshape(data, (..,..))
 
 自定义的 msg/srv 在生成的 dist-package 中会有类型，可以自己看看
 
-
-
 消息引用：
 
 ```python
@@ -152,7 +150,7 @@ img_msgs = sensor_msgs.msgs.Image()
 
 编译时报错： /usr/bin/env 'python\r'
 
-这是由于文件在 windows 系统中重新编码过， 在linux 中多了一个 \r 
+这是由于文件在 windows 系统中重新编码过， 在linux 中多了一个 \r
 
 最好的方法就是直接从 github 上 clone
 
@@ -186,7 +184,7 @@ manifest.xml 是 rosbuild 下的包描述。
 
 srv, msg , action 在包中放在相应文件夹下，作为自定义。
 
-*.luanch, *.yaml(配置文件)
+*.luanch*.yaml(配置文件)
 
 ```bash
 rospack find [package_name]
@@ -210,13 +208,13 @@ rospack list | grep [...] # 可以过滤字符串
 
 这都需要 find_package (... )
 
-对于前者，include (${catkin_INCLUDE_DIR}) 可以引用生成的message 头文件， 
+对于前者，include(${catkin_INCLUDE_DIR}) 可以引用生成的message 头文件，$
 
-对于后者， 可以在前者包中生成库文件(.so)，然后引用即可 
+对于后者， 可以在前者包中生成库文件(.so)，然后引用即可
 
 2020.1.15
 
-最近遇到一个与launch 有关的， roslaunch 时报错： 
+最近遇到一个与launch 有关的， roslaunch 时报错：
 
 invalid \<param>  tag : cannot load command parameter [rosversion] : returned with code [1]
 
@@ -228,7 +226,7 @@ invalid \<param>  tag : cannot load command parameter [rosversion] : returned wi
 
 Cmakelist 中并不生成 可执行文件，但是在package.xml 中会有其他包的运行依赖，便于安装
 
-# structure
+## system_structure
 
 master ,node 启动时向 master 申请， master 管理通信。 ros 运行必需 ros master / ros parameter server / rosout (logging mode)
 
@@ -256,7 +254,7 @@ rostopic pub 发布消息时， 若遇到消息中的变量赋值
 
 这里新加入使用socket 传输。ros 通信其实是用msg 类中的 serialize 方法将消息序列化，发送出去。接收端deserialize 恢复成原来格式。注意： 接收端的缓存空间！
 
-ros 中　float32[] 可以用　vector 接受。而float32[9] 要用boost::array 接受。具体见　./learn opencv/cpp/cpp.md 中boost 库详解
+ros 中 float32[] 可以用vector 接受。而 float32[9] 要用boost::array 接受。具体见　./Program/cpp.md 中boost 库详解
 
 ## bag
 
@@ -276,7 +274,7 @@ service 定义 ：
 
 [request msg]
 
-/ -----
+\----
 
 ....
 
@@ -286,13 +284,13 @@ rossrv show [ rosservice info 下 type 后的类型]
 
 rosservice call [service-name] "param: value"
 
-## implementation
+#### implementation
 
 通过 gencpp,genpy 生成指定的文件，方便调用。
 
 在 CmakeList.txt 中：
 
-```CMake
+```cmake
 add_message_files(...)
 add_service_files(...)
 ..
@@ -300,7 +298,7 @@ add_service_files(...)
 generate_messages()
 
 # 必须在 caikin_package 之前调用, catkin_package 的 CATKIN_DEPENDS 后加上 message_runtime
-# 必须在 find_package 中找 message_generation, 且在 package.xml 中加上编译依赖与运行依赖。
+# 必须在 find_package 中加入 message_generation, 且在 package.xml 中加上编译依赖与运行依赖。
 ```
 
 ## parameter server
@@ -317,15 +315,6 @@ launch 文件中：
 <param name='....' command="...[执行文件] ...[参数文件]"/>
 
 <!--可执行文件得到参数文件作为参数后返回的值作为 param 的值-->
-
-<rosparam file="..."  command="load"/> 加载文件作为参数
-
-<!--
-    the parameter file in yaml format:
-    /camera/name : 'nikon' #string type
-    /camera/fps : 30 #integer
-    -->
-```
 
 还有一个namespace 的概念 ：
 
@@ -358,7 +347,7 @@ rosparam file = "..../ .. .yaml" command="load" 从其余配置文件导入参�
 <include file="*.launch" /> launch 文件
 ```
 
-remap ：　可以映射不同的话题，　将原本订阅/发布的话题改变成另一个即可向节点中传入参数
+remap:可以映射不同的话题，将原本订阅/发布的话题改变成另一个,即可向节点中传入参数
 
 ```xml
 $(optenv ENV_VARIABLE default)
@@ -375,15 +364,15 @@ tf tree 之间必须保持联通。broadcaster 向关系中发布消息，确定
 
 /tf 下有多个节点发送消息
 
-eg. base_link to lidar 
+eg. base_link to lidar
 
 Transformstamped.msg
 
-指定从 frame_id -> child_frame_id 的变换 
+指定从 frame_id -> child_frame_id 的变换
 
 tf/tfMesssage.msg & tf2_msgs/TFMessage.msg
 
-为上一数据结构的数组 
+为上一数据结构的数组
 
 c++ 直接 send Transform 发 vector 与 单个都可以
 
@@ -391,13 +380,65 @@ lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧�
 
 ## slam
 
+### AMCL
+
 AMCL 定位 2D 概率定位系统 采用激光雷达等定位
+
+### 参数设置
+
+laser_z_* 传感器模型中的激光参数设置
+
+odom_alpha_* 里程计模型中参数
+
+odom_model_type 设置里程计的模型
+
+#### 代码解读
+
+AMCL Node 结构：
+
+1. 读取参数
+2. 获取tf 坐标变换(tf2_ros::TransformBroadcaster, tf2_ros::Buffer, tf2_ros::TransformListener)
+3. 设置雷达接受回调函数(tf2_ros::MessageFilter) (主要处理函数)
+4. 地图处理
+5. 动态参数设置　(dynamic_reconfigure::Server)
+
+在　src/amcl/sensors/amcl_odom.cpp 里面有运动更新(AMCLOdom::UpdateAction). AMCLLaser::UpdateSensor 是激光的更新。
+
+粒子采用　pf_sample_t 动态数组维护，粒子集使用 _pf_sample_set_t 作为顶层粒子集的封装
+
+when draw randomly from a zero-mean Gauss Distribution, Use the polar form of the [Box-Muller Transformation](http://www.taygeta.com/random/gaussian.html)
+
+```c++
+    double pf_ran_gaussian(double sigma){
+        do
+        {
+            do{ r=drand48(); } while(r==0.0);
+            x1 = 2.0 * r - 1.0;
+            do{ r=drand48(); } while(r==0.0);
+            x2 = 2.0 * r - 1.0;
+            w = x1*x1 + x2*x2;
+        }while(w > 1.0 || w==0.0);
+        return(sigma*x2*sqrt(-2.0*log(w)/w));
+    }
+```
+
+重点函数 laserReceived：
+
+1103-1144 是在记录是否有 base_link 到 laser_scan_frame_id 的变换，如果没有则在 lasers_ 中记录。lasers_ , frame_to_laser_ 两个构成索引的表。则直接在 frame_to_laser_ 中得到相应雷达变换的索引
+
+1147-1153 将 odom 到 base_frame 的变换，由轮式里程计提供（相当于机器人走过的路程）
+
+1158-1177 计算 pose 的变化， pose 是目前的位姿。(这里应该有外部提供了里程计信息), 这里 update 变量是为了防止移动距离过小（或者不移动）导致重采样失败引入。（具体见书重采样部分）
+
+1179-1195 初始化粒子滤波器(如果没有的话)
+
+1197-1214 运动更新部分（具体可以看笔记）
 
 ### mapping
 
-采用 gmapping 构建导航图，在rviz 中得到导航地图， ROS-Academy 中slam 有 gmapping launch 
+采用 gmapping 构建导航图，在rviz 中得到导航地图， ROS-Academy 中slam 有 gmapping launch
 
-rosrun map_server map_saver -f mymap 保存生成的地图 
+rosrun map_server map_saver -f mymap 保存生成的地图
 
 gmapping 订阅雷达数据和坐标（tf）并发布到 /map 话题上， OccupancyGrid.msg
 
@@ -411,17 +452,17 @@ tf 要求： laser -> base_link -> odom
 
 configure parameters:
 
- maxUrange : max usable data of range from lidar
+maxUrange : max usable data of range from lidar
 
- minimumScore :
+minimumScore :
 
-### localization 
+### localization
 
 AMCL 定位；  蒙特卡洛定位
 
 先预先生成随机的位姿，通过机器人的移动，滤去不可能的位姿。
 
-### path planner
+### path_planner
 
 Naviagtion 导航，包括路径规划算法。
 
@@ -431,11 +472,11 @@ frame 中 data 直接是把图片压成一维了， width*height
 
 1. 重新定位机器人， 2D pose estimation
 
-2. set 2D nav goal 
+2. set 2D nav goal
 
-Navigation
+### Navigation
 
-move_base 中心节点， 中间的插件只需要指定算法即可。需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )。当move_base 接受到goal后会连接其它组件，最后发送/cmd_vel 
+move_base 中心节点， 中间的插件只需要指定算法即可。需要 Base Local Planner/ Base global planner/ recovery behavior (指定， 继承了nav_core )。当move_base 接受到goal后会连接其它组件，最后发送/cmd_vel
 
 move_base 实际上是一个 action_server, 接受goal pose, 所以用 rviz 设置2D nav goal 实际上是发布了一条消息。
 
@@ -449,7 +490,7 @@ service : /make_plan 只提供路径，而不移动
 
 parameter:  对nav_fn costmap planner 的参数
 
-controller_frequency : 控制向base_controller 发送消息的频率。 
+controller_frequency : 控制向base_controller 发送消息的频率。
 
 Tolerance parameters : 机器人的位姿与设定的位姿相差的允许值。
 
@@ -457,13 +498,13 @@ sim_time : base_local_planner 估计路径的长短
 
 costmap
 
-两张： （global/local） ;  global planner 采用static map 进行路径规划， 不会对sensor 的数据处理。有三层； 
+两张： （global/local） ;  global planner 采用static map 进行路径规划， 不会对sensor 的数据处理。有三层；
 
-static layer : 订阅map topic ; obstacle layer : 动态添加，避障  ; inflation layer : 膨胀障碍物，确定机器人安全范围 
+static layer : 订阅map topic ; obstacle layer : 动态添加，避障  ; inflation layer : 膨胀障碍物，确定机器人安全范围
 
-local planner 在运动中会执行避障操作，并达到目的地。local planner 有不同选择 
+local planner 在运动中会执行避障操作，并达到目的地。local planner 有不同选择
 
-base_local_planner : 随机选择一些允许的位移，并计算每条位移的结果。选择结果最好的。; bwa_local_planner , 
+base_local_planner : 随机选择一些允许的位移，并计算每条位移的结果。选择结果最好的。; bwa_local_planner ,
 
 navfn(extension) , A* 迪杰斯特拉 / carrot planner , 可以根据障碍物设定
 
@@ -471,348 +512,6 @@ navfn(extension) , A* 迪杰斯特拉 / carrot planner , 可以根据障碍物�
 
 rgb-d slam package
 
-### pointcloud_to_laserscan ＆　depthimage_to_laserscan
+### pointcloud_to_laserscan ＆ depthimage_to_laserscan
 
 convert pointcloud data to laser scan data
-
-### ros&opencv
-
-ros 中的cvImage
-
-```c++
-namespace cv_bridge {
-   
-   class CvImage
-   {
-   public:
-     std_msgs::Header header;
-     std::string encoding;
-     cv::Mat image;
-   };
-   
-   typedef boost::shared_ptr<CvImage> CvImagePtr;
-   typedef boost::shared_ptr<CvImage const> CvImageConstPtr;
-   
-  }
-```
-
-也就是将 ros 中的数据格式与 Mat 相互转化
-
-# ROSPY&ROSCPP
-
-## rospy
-
-publisher 初始化时， 设置queue_size 为较小整数， None 表示同步通信
-
-# GAZEBO
-
-gazebo --verbose 会显示所有信息 / -u 进入时处于暂停
-
-gazebo  系统文件夹下有纹理与模型，需要先 source /usr/share/gazebo/setup.bash
-
-## structure
-
-gazebo 包括 gzserver gzclient
-
-environment variables: 
-
-`GAZEBO_MODEL_PATH`: colon-separated set of directories where Gazebo will search for models
-
-`GAZEBO_RESOURCE_PATH`: colon-separated set of directories where Gazebo will search for other resources such as world and media files.
-
-`GAZEBO_MASTER_URI`: URI of the Gazebo master. This specifies the IP and port where the server will be started and tells the clients where to connect to.
-
-`GAZEBO_PLUGIN_PATH`: colon-separated set of directories where Gazebo will search for the plugin shared libraries at runtime.
-
-`GAZEBO_MODEL_DATABASE_URI`: URI of the online model database where Gazebo will download models from.
-
-整个机制与 ROS 很像， 有一个 master,name server, topic (communication)
-
-## sensor
-
-[noise_sensor](http://gazebosim.org/tutorials?tut=sensor_noise&cat=sensors)
-
-add noise to sensors (lidar / imu / camera)
-
-## plugins
-
-Load functions create pointers and set it to sensors
-
-```shell
-gzserver -s <plugin_filename>
-```
-
-plugins 分为： world, model, sensor, system, visual, gui ; check [here](https://bitbucket.org/osrf/gazebo) for more examples
-
-```c++
-#include <gazebo/gazebo.hh>
-
-namespace gazebo
-{
-  class WorldPluginTutorial : public WorldPlugin
-  {
-    public: WorldPluginTutorial() : WorldPlugin()
-            {
-              printf("Hello World!\n");
-            }
-
-    public: void Load(physics::WorldPtr _world, sdf::ElementPtr _sdf)
-            {
-            }
-  };
-  GZ_REGISTER_WORLD_PLUGIN(WorldPluginTutorial)
-  // register the plugin class (WORLD 可以替换为 GUI, SENSOR ...)
-}
-```
-
-Load 中 _sdf是 导入的 sdf 文件，含有标签信息
-
-### model
-
-相关 API 在 gazebo physics。(注意 Model 类)
-
-apply speed and velocity to a model 
-
-```c++
-namespace gazebo
-{
-  class ModelPush : public ModelPlugin
-  {
-    public: void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
-    {
-      // Store the pointer to the model
-      this->model = _parent;
-
-      // Listen to the update event. This event is broadcast every
-      // simulation iteration.
-      this->updateConnection = event::Events::ConnectWorldUpdateBegin(
-          std::bind(&ModelPush::OnUpdate, this));
-    }
-
-    // Called by the world update start event
-    public: void OnUpdate()
-    {
-      // Apply a small linear velocity to the model.
-      this->model->SetLinearVel(ignition::math::Vector3d(1, 0, 0));
-    }
-
-    // Pointer to the model
-    private: physics::ModelPtr model;
-
-    // Pointer to the update event connection
-    private: event::ConnectionPtr updateConnection;
-  };
-
-  // Register this plugin with the simulator
-  GZ_REGISTER_MODEL_PLUGIN(ModelPush)
-}
-```
-
-在赋予物体运动特性时，注意把 static 这个标签设置为 false
-
-## world
-
-### DEM file
-
-三维地形图
-
-## sensor
-
-其实 camera 是 model 下 sensor 一个属性
-
-camera 下可以自动保存图片
-
-```xml
-<model name='camera'>
-      <static>true</static>
-      <pose>-1 0 2 0 1 0</pose>
-      <link name='link'>
-        <visual name='visual'>
-          <geometry>
-            <box>
-              <size>0.1 0.1 0.1</size>
-            </box>
-          </geometry>
-        </visual>
-        <sensor name='my_camera' type='camera'>
-          <camera>
-            <!- set save and save path ->
-            <save enabled="true">
-              <path>/tmp/camera_save_tutorial</path>
-            </save>
-            <horizontal_fov>1.047</horizontal_fov>
-            <image>
-              <width>1920</width>
-              <height>1080</height>
-            </image>
-            <clip>
-              <near>0.1</near>
-              <far>100</far>
-            </clip>
-          </camera>
-          <always_on>1</always_on>
-          <update_rate>30</update_rate>
-        </sensor>
-      </link>
-    </model>
-```
-
-## model
-
-Links : A link contains physical property of a model. Each link contain many collisions and visual elements. Try to reduce the number of links and substitute it with collision parts
-
-visual : the visual part of the model .
-
-collision: use simpler collision model to reduce computation time ("hit box")
-
-Inertial : Inertial element describes mass and rotational inertia matrix.
-
-Sensor /Light
-
-Joints: A joint connect two links (A parent and child relation is established) 在PX4中 Joint 可以用来连接两个引入的模型。
-
-add mesh in geometry
-
-```xml
-visual name="visual">
-		<geometry>
-			<mesh><uri>model://tree/mesh/tree.dae</uri></mesh>
-		</geometry>
-</visual>
-```
-
-### 构建流程
-
-1. 在文件夹下创建[name].sdf(细节描述) 与 model.config(大概描述) 文件 (注意GAZEBO_MODEL_PATH 下要求每个文件都有 model.config). model.config 中 sdf tag 中指定了 [name].sdf
-
-2. 添加标签描述
-
-   > pose 的坐标系默认为地系，可在下面建立 frame 指明。x,y,z,roll,yaw,pitch
-
-添加模型中其余模型(注意：引用的model模型是由此模型的文件夹名字确定的)：
-
-```xml
-<!-- insert another model in a model -->
-<include>
-           <uri>model://hokuyo</uri>
-           <!-- pose of this model -->
-           <pose>.2 0 .2 0 0 0</pose>
-      </include>
-      <!-- joint connects and fixes this part-->
-      <joint name = "hokuyo_joint" type="fixed">
-           <child>hokuyo::link</child>
-           <parent>chassis</parent>
-      </joint>
-```
-## urdf  & sdf
-
-[sdf_reference](http://gazebosim.org/sdf)
-
-具体文件在 robot_sim_demo 下的　urdf/ *.urdf.xacro 中，　可以看到各个　frame　之间的转换 
-
-udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中使用。 
-
-```xml
-<!-- xacro 中的 "函数调用"-->
-<xacro:macro name="default_link" params="prefix">
-    <link name="${prefix}_link1" />
-</xacro:macro>
-<xacro:default_link prefix="my" />
-```
-
-
-
-文件基本构架：
-
-以 px4 为例，定义不同的飞机组件： iris\ rplidar\ lidar 
-
-再在一台具体飞机下确定使用哪些组件
-
-以 iris_fpv_cam 为例
-
-```xml
-<?xml version='1.0'?>
-<sdf version='1.5'>
-  <model name='iris_fpv_cam'>
-
-    <include>
-      <uri>model://iris</uri>
-      <!-- add the iris plane -->
-    </include>
-
-    <include>
-      <uri>model://fpv_cam</uri>
-      <!-- add the fpv_cam component, add define the joint of this component-->
-      <pose>0 0 0 0 0 0</pose>
-    </include>
-    <joint name="fpv_cam_joint" type="fixed">
-      <child>fpv_cam::link</child>
-      <parent>iris::base_link</parent>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <limit>
-          <upper>0</upper>
-          <lower>0</lower>
-        </limit>
-      </axis>
-    </joint>
-
-  </model>
-</sdf>
-```
-
-## With ROS
-
-在与ROS 通信时，需要加入特定的插件，才能在 ROS 中收到相关信息。[link](http://gazebosim.org/tutorials?tut=ros_gzplugins&cat=connect_ros)
-
-针对相机的：
-
-```xml
-<plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-                <alwaysOn>true</alwaysOn>
-                <updateRate>0.0</updateRate>
-                <cameraName>rrbot/camera1</cameraName>
-                <imageTopicName>image_raw</imageTopicName>
-                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-                <frameName>camera_link</frameName>
-                <hackBaseline>0.07</hackBaseline>
-                <distortionK1>0.0</distortionK1>
-                <distortionK2>0.0</distortionK2>
-                <distortionK3>0.0</distortionK3>
-                <distortionT1>0.0</distortionT1>
-                <distortionT2>0.0</distortionT2>
-            </plugin>
-```
-
-深度相机的(这个是kinetic 相机的)：
-
-```xml
-<plugin name="camera_plugin" filename="libgazebo_ros_openni_kinect.so">
-          <baseline>0.2</baseline>
-          <alwaysOn>true</alwaysOn>
-          <!-- Keep this zero, update_rate in the parent <sensor> tag
-            will control the frame rate. -->
-          <updateRate>0.0</updateRate>
-          <cameraName>camera_ir</cameraName>
-          <imageTopicName>/camera/color/image_raw</imageTopicName>
-          <cameraInfoTopicName>/camera/color/camera_info</cameraInfoTopicName>
-          <depthImageTopicName>/camera/depth/image_raw</depthImageTopicName>
-          <depthImageCameraInfoTopicName>/camera/depth/camera_info</depthImageCameraInfoTopicName>
-          <pointCloudTopicName>/camera/depth/points</pointCloudTopicName>
-          <frameName>camera_link</frameName>
-          <pointCloudCutoff>0.5</pointCloudCutoff>
-          <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
-          <distortionK1>0</distortionK1>
-          <distortionK2>0</distortionK2>
-          <distortionK3>0</distortionK3>
-          <distortionT1>0</distortionT1>
-          <distortionT2>0</distortionT2>
-          <CxPrime>0</CxPrime>
-          <Cx>0</Cx>
-          <Cy>0</Cy>
-          <focalLength>0</focalLength>
-          <hackBaseline>0</hackBaseline>
-   </plugin>
-```
-
-有关雷达注意选择是 GPU 还是 CPU

@@ -1,10 +1,6 @@
 # CMAKE
 
-official tutorials :
-
-<https://cmake.org/cmake/help/latest/guide/tutorial/index.html>
-
-
+[official tutorials](https://cmake.org/cmake/help/latest/guide/tutorial/index.html)
 
 对于源码编译的库 
 
@@ -13,8 +9,6 @@ cmake -D [parameters] ..
 make -j 
 
 make install 是把.h 文件写入/usr/lib/local 下
-
-
 
 MESSAGE(STATUS " path " ${...} ) 可以在编译时检查路径是否出错
 
