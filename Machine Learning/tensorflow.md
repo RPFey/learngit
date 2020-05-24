@@ -15,6 +15,11 @@ init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)
 	....
+    
+# 如果想要获取变量的值
+weight = tf.Variable([0.]*num_coff, name="parameters")
+# ... (run trainig op)
+w = sess.run(weight) # ndarray type
 ```
 
 变量 和 op 有 name 参数，可以命名
@@ -25,7 +30,16 @@ with tf.Session() as sess:
 self.epoch_add_op = self.epoch.assign(self.epoch + 1) # epoch 自加操作
 ```
 
-感觉 tf.Variable 就像一般变量一般，经常声明。
+如果要查看全局的变量（以检查变量是否重复使用）
+
+```python
+print([n.name for n in tf.get_default_graph().as_graph_def().node if 'Variable' in n.op])
+
+# or
+print(tf.global_variables())
+```
+
+
 
 ## gradient
 
@@ -44,17 +58,15 @@ clipped_gradients, gradient_norm = tf.clip_by_global_norm(
 
 ## fetch & feed
 
-sess.run([op1,op2,...])
+sess.run([op1,op2,...], {...})
 
 会返回 : [result1, result2, ....],  且按顺序进行。
 
 占位变量赋值 ： 
 
-v=tf.placeholder(dtype= ... , shape=(...))  元组形式指明维度
+v=tf.placeholder(dtype= ... , shape=(...))  元组形式指明维度，维度可以用None 表示任意大小
 
-维度可以用None 表示任意大小
-
-在 sess.run(op, feed_dict={<variable_name>:  <value_>}) 执行赋值并计算。 可以直接用 ndarray 。
+在 sess.run(op, feed_dict={<variable_name>:  <value_>}) 执行赋值并计算。 可以直接用 ndarray 。如果有多个操作，各个 placeholder 只需要赋值一次即可。
 
 常用方法： 最开始用 placeholder 设置输入数据格式， 最后用 sess.run() 放入数据
 
@@ -81,6 +93,13 @@ tensorflow 将要计算的数据读入一个内存队列中，与计算的线程
 文件名队列与内存队列：文件名队列是读入数据的顺序，用来表示训练的 epoch, 内存队列则是要读取的单张图
 
 ```python
+# 如果是要从文件夹下读取
+filenames = tf.train.match_filenames_once('./data/*.txt')
+count_num_files = tf.size(filenames)
+filename_queue = tf.train.string_input_producer(filenames)
+reader = tf.WholeFileReader()
+filename, file_contents = reader.read(filename_queue)
+
 
 #构建工作队列
 input_queue = tf.train.string_input_produce([image_text.txt], num_epoches=epoch, shuffle=True)
@@ -88,12 +107,12 @@ input_queue = tf.train.string_input_produce([image_text.txt], num_epoches=epoch,
 line_reader = tf.TextLineReader()
 _, line = line_reader.read(input_queue)
 split_line = tf.string_split([line]).values 
-# 将列表中的字符串划分，返回对象包括(indices, values, dense_shape) , values 是具体的字符串，indice 指标(i,j) 第i个字符串的第j 个词。
+# 将列表中的字符串划分，返回对象包括(indices, values, dense_shape) , values 是具体的字符串，indice 指标(i,j) 第i个字符串的第 j 个词。
 left_image_path = tf.string_join([self.data_path, split_line[0]])
 # string_join 是路径相连 相当于 os.path.join
 
 tf.image.decode_png(tf.read_file(image_path)) # 读取
-orig_height = tf.cast(tf.shape(image)[0], "float32") # 获取大小
+origin_height = tf.cast(tf.shape(image)[0], "float32") # 获取大小
 image = tf.image.convert_image_dtype(image, tf.float32) # 转换类型
 image = tf.image.resize_images(
             image, [self.opt.img_height, self.opt.img_width],
@@ -228,6 +247,18 @@ tf.slice(input, begin, size, name=None) 在 input 张量上截取。 begin[i] �
 name_scope() 与 Variable() 使用，是为了管理变量的命名空间提出，在 tensorboard 中显示。
 
 variable_scope() 与 get_variable() 使用，实现变量的共享，即重复使用同一张网络。get_variable() 搜索相应的变量名称，如果没有会新建，有则提取同样名字的变量。
+
+```python
+def get_scope_variable(scope, var, shape=None):
+    with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
+        v = tf.get_variable(var, shape)
+    return v
+
+v1 = get_scope_variable("foo", "v", [1])
+v2 = get_scope_variable("foo", 'v') # reuse varibale named 'v' under 'foo' scope
+```
+
+
 
 get_trainable() 获得所有训练参数列表。get_collection(tf.Graphkeys.TRAIANABLE_VARIABLES, scope="...") scope 可以使用正则表达式。
 
