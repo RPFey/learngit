@@ -1,55 +1,12 @@
-# model
+# Kaggle
+
+## model
 
 decision tree : use character of data to build a decision tree. Make predictions according to this tree.
 
-# pandas
+## sklearn
 
-```python
- # read files
- data = pd.read_csv("path_to_csv")
- data.describe()
-```
-
-the describe() method will show count(number of non-missing value in the set), mean, std, min, 25%, 50%, 75%, max value
-
-```python
-# drop out not available data
-data.dropna(axis = 0)  # drop out row if it exists missing data.
-data.columns # all the column tag we can access
-
-# index
-y = data.Price   # the Price column 
-
-features = ['Rooms', 'Bathroom', 'Landsize', 'Lattitude', 'Longtitude'] 
-# string is necessary
-X = data[features]
-# check first n data
-X.head(n)
-```
-
-# Scipy
-
-* scipy.spatial.Delaunay
-
-寻找位于凸多边形内的点
-
-```python
-def in_hull(p, hull):
-    '''
-    p : points (N, 3)
-    hull : 多边形的顶点 (8, 3)
-    '''
-    from scipy.spatial import Delaunay
-    if not isinstance(hull,Delaunay):
-        hull = Delaunay(hull)
-    return hull.find_simplex(p)>=0
-
-# 这里是将这个多面体划分为多个四面体，find_simplex 是找位于其中的点，并返回其所属的索引，若该点不在任何四面体中，则是 -1
-```
-
-# sklearn
-
-## random forest
+### random forest
 
 construct many trees and make predictions as the average of these trees
 
@@ -60,7 +17,7 @@ model.fit(X, y)
 model.predict(..)
 ```
 
-## decision tree model
+### decision tree model
 
 ```python
 from sklearn.tree import DecisionTreeRegressor
@@ -93,6 +50,19 @@ scores = {leaf_size: get_mae(leaf_size, train_X, val_X, train_y, val_y) for leaf
 best_tree_size = min(scores, key=scores.get) # 传入字典的 get 方法作为比较的准则
 ```
 
-![avatar](../img/overfit_vs_underfit.png)
-
 find the lowest point of the validation curve
+
+## Contest
+
+### Titanic
+
+> following notes are from notebook ---- A Data Science Framework.
+
+数据分类
+
+1. outcome vavriable (survive or not). This is a nominal datatype -- 1 for survival, 0 for death. The outcome variable depends whether this is a regression or classification model.
+2. random unique identifiers. eg. Passenger ID, Ticket variables
+3. variables for future feature engineering. eg. Name : we can get family size from sir name; SibSp : help to create from a family size.
+4. nominal datatype. eg. Sex and Embarked : convert to dummy variables for computations.
+5. Continuous datatype : eg. Age & Fare.
+

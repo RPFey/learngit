@@ -1,14 +1,16 @@
-# hardware setup
+# STM32
+
+## hardware setup
 
 VDD digital power supply (positive digital input)
 
 VSS GROUND (pin ground) 两者之间加入电容 一个是滤波(电源不稳定)
 
-ST-LINK v2 
+ST-LINK v2
 
-SWCLK (clock) ; SWDIO (data input & output) ; power supply (for the micro chip)  you can find the corresponding pins on stm32 chip (SWCLK SWDIO) 
+SWCLK (clock) ; SWDIO (data input & output) ; power supply (for the micro chip)  you can find the corresponding pins on stm32 chip (SWCLK SWDIO)
 
-SWCLK pull low externally (link to GND); SWDIO pull high 
+SWCLK pull low externally (link to GND); SWDIO pull high
 
 for JTAG , pins are same (正点原子 STM32F1 的板子)
 
@@ -16,7 +18,7 @@ for JTAG , pins are same (正点原子 STM32F1 的板子)
 
 you can also find SWDIO is pulled up while SWCLK is pulled down.
 
-## Degub protoptype (JTAG / SWD)
+### Degub protoptype (JTAG / SWD)
 
 <https://blog.csdn.net/LEON1741/article/details/72846434>
 
@@ -38,7 +40,7 @@ SWD，串行调试(Serial Wire Debug), 更少的引脚(4 个), 大数据下更�
 
 ### 仿真器
 
-jlink 
+jlink
 
 基于 JTAG 仿真，面对计算机采用 USB 口， 对板仍然采用 JTAG 口
 
@@ -64,7 +66,7 @@ COM 是 PC 上异步串行通信口 RS232
 
 ### CLOCK
 
-RCC (Reset Clock Control) 
+RCC (Reset Clock Control)
 
 AHB (Advanced High performance Bus)
 
@@ -74,15 +76,13 @@ MODER (mode register)
 
 OTYPER (output type register)
 
+## IDE
 
-
-# IDE 
-
-## Coox 
+### Coox
 
 the repo(libs) follows a git format, and you may search the whole folder to find the file (if missing !)
 
-# Program 
+## Program
 
 stmf4xx.h has defines about registers
 
@@ -91,5 +91,35 @@ RCC -> AHBENR |= RCC_AHBENR_GPIOCEN ; // or (1 << 19) specify the bits
 
 // set zero
 
-GPIOC -> OTYPER &= ~(...) 
+GPIOC -> OTYPER &= ~(...)
 ```
+
+### ASSEMBLY CODE
+
+eg. inline assembly code
+
+```c
+int x = 1, y = 2 ;
+int res = 0;
+__asm ("ADD %[result], %[input_x], %[input_y]"
+    : [result] "=r" (res)
+    : [input_x] "r" (x), [input_j] "r" (y)
+)
+```
+
+格式为
+
+```c
+__asm [volatile] ( code_template
+    : output_operand_list
+    [: input_operand_list
+    [: clobbered_register_list] ]
+)
+```
+
+一般是一行命令对应为一行 __asm
+
+## RTOS
+
+### NUTTX
+
