@@ -34,7 +34,9 @@ SWD，串行调试(Serial Wire Debug), 更少的引脚(4 个), 大数据下更�
 
 ![avatar](img/JTAGandSWD.jpg)
 
-可以看到对上面正点原子的板子， SWD 与 JTAG 共用了一个口
+> 可以看到对上面正点原子的板子， SWD 与 JTAG 共用了一个口
+
+SWD 相比于 JTAG 使用接口更少，只需要 SWDIO, SWCLK, VCC, GND 四根线(stm32f103-minimum　上的四个借口)
 
 ### 仿真器
 
@@ -44,7 +46,43 @@ jlink
 
 ST - link
 
-专门针对 ST 公司的芯片， 可以烧写，仿真，下载
+专门针对 ST 公司的芯片， 可以烧写，仿真，下载。 st-link v2 对于 JTAG 和 SWD 是通用的，在 Keil 可以随意选择。
+
+### 烧写
+
+* openocd 
+
+参见 nuttx 中 openocd 安装与烧写方法
+
+```bash
+openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg -c init -c "reset halt" -c "flash write_image erase nuttx.bin 0x08000000"
+```
+
+* stlink
+
+使用 stlink 驱动烧写
+
+注意烧写时的 BOOT 引脚设置。
+
+| BOOT0 | BOOT1 | 启动方式 |
+| :-: | :-: | :-: |
+| 0 | 无关 | 用户闪存存储器启动 (User Flash memory) |
+| 1 | 0 | 从系统存储器启动 (System memory) |
+| 1 | 1 | 从内嵌SRAM 启动 (Embedded SRAM) |
+
+* User Flas memory
+
+正常工作模式
+
+* System Memory
+
+系统存储器是芯片内部一块特定的区域， ST 在出厂时，在内部预置了一段 bootloader, (ROM)。　在 bootloader 帮助下，通过串口下载程序到 flash 中。
+
+* Embedded SRAM
+
+该模式用于调试代码（不需要全部擦除从来）
+
+> 2020.5.30 晚上一直不清楚 stlink-v2 通过 openocd 无法连接芯片的原因。后来发现是 Boot 接线不对，导致驱动检测不到芯片。
 
 ## communication
 
@@ -74,8 +112,6 @@ MODER (mode register)
 
 OTYPER (output type register)
 
-
-
 # IDE 
 
 ## Coox 
@@ -93,3 +129,19 @@ RCC -> AHBENR |= RCC_AHBENR_GPIOCEN ; // or (1 << 19) specify the bits
 
 GPIOC -> OTYPER &= ~(...) 
 ```
+
+# RTOS
+
+## NUTTX
+
+\> System Type > STM32 Peripheral Support 中确定使用的外设
+
+\> System Type > Alternate Pin Mapping 中确定重映射关系
+
+### PWM
+
+在 boards 下 stm32f103-minimum config 中配置 pwm Timer 和 output channel 。在 stm32f103-minimum.h 中确认定义的通道和定时器与 config 中一致
+
+\> System Type > Timer Configuration 配置定时器的使用模式，输出通道 
+
+> help 键可以查询配置文件来源。关于模式等详细说明在 help 中查找。

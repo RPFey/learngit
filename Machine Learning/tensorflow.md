@@ -26,6 +26,8 @@ w = sess.run(weight) # ndarray type
 
 会话中赋值  tf.assign(a,b) —— 将 b 赋值给 a , 且返回是一个 op eg.
 
+> 注意， v = v1 + v1 与 v.assign(v1 + v2) 是两回事。前者是一个 op , 后者是变量赋值。
+
 ```python
 self.epoch_add_op = self.epoch.assign(self.epoch + 1) # epoch 自加操作
 ```
@@ -39,22 +41,41 @@ print([n.name for n in tf.get_default_graph().as_graph_def().node if 'Variable' 
 print(tf.global_variables())
 ```
 
+## gradient&learning rate operation
 
-
-## gradient
+### clip gradient
 
 如果对梯度有什么操作的话，可以构建如下图:
 
 ```python
-self.params = tf.trainable_variables() # get all the trainable gradients
-gradients = tf.gradients(self.loss, self.params)  # 相当于是求梯度的操作
+params = tf.trainable_variables() # get all the trainable gradients
+gradients = tf.gradients(loss, params)  # 相当于是求梯度的操作
 clipped_gradients, gradient_norm = tf.clip_by_global_norm(
 	gradients, max_gradient_norm)
+optimizer = tf.train.AdamOptimizer(learning_rate)
+apply_gradient_op = optimizer.apply_gradient(gradients, global_step=batch) # 更新
+
 ```
 
 这里是对所有参数的梯度进行一次放缩到 max_gradient_norm 。详细可见 [Pascau et al., 2012](http://arvix.org/abs/1211.5063.pdf)
 
+### adjust learning rate
 
+learning rate decay
+```python
+learning_rate = tf.train.exponential_decay(
+                    BASE_LEARNING_RATE,  # Base learning rate.
+                    batch * BATCH_SIZE,  # Current index into the dataset.
+                    DECAY_STEP,          # Decay step. 20000
+                    DECAY_RATE,          # Decay rate. 0.5
+                    staircase=True)
+learing_rate = tf.maximum(learning_rate, 0.00001) # CLIP THE LEARNING RATE!
+optimizer = tf.train.AdamOptimizer(learning_rate)
+```
+
+### batch norm
+
+batch norm 调参数
 
 ## fetch & feed
 
@@ -69,7 +90,6 @@ v=tf.placeholder(dtype= ... , shape=(...))  元组形式指明维度，维度可
 在 sess.run(op, feed_dict={<variable_name>:  <value_>}) 执行赋值并计算。 可以直接用 ndarray 。如果有多个操作，各个 placeholder 只需要赋值一次即可。
 
 常用方法： 最开始用 placeholder 设置输入数据格式， 最后用 sess.run() 放入数据
-
 
 # 数据读取
 
@@ -251,18 +271,16 @@ variable_scope() 与 get_variable() 使用，实现变量的共享，即重复�
 ```python
 def get_scope_variable(scope, var, shape=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        v = tf.get_variable(var, shape)
+        v = tf.get_variable(var, initializer=tf.random_normal(shape))
     return v
 
 v1 = get_scope_variable("foo", "v", [1])
 v2 = get_scope_variable("foo", 'v') # reuse varibale named 'v' under 'foo' scope
 ```
 
-
-
 get_trainable() 获得所有训练参数列表。get_collection(tf.Graphkeys.TRAIANABLE_VARIABLES, scope="...") scope 可以使用正则表达式。
 
-两者会开辟不同的空间。name_scope, 与 variable_scope 开辟的域会加在 Variable 声明的变量上； 而只有 variable_scope 声明的域会加在 get_variable() 创建的变量上。
+两者会开辟不同的空间。name_scope 与 variable_scope 开辟的域会加在 Variable 声明的变量上； 而只有 variable_scope 声明的域会加在 get_variable() 创建的变量上。
 
 关于 reuse， 在构建过程中如果同时有多个 example 经过同一个神经网络，就需要用到 reuse; 方法是将所经过的层设置为相同的名称，并将参数 reuse 设置为 true / 或者是 get_variable() 针对单个 tensor。 比如：
 
@@ -318,11 +336,7 @@ class VFElayer(object):
     
 ```
 
-   
-
 ## tensorboard
-
-
 
 # Multi-GPU & distributed training
 
