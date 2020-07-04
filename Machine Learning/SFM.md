@@ -1,3 +1,15 @@
+
+<!-- vim-markdown-toc GFM -->
+
+* [Sfm](#sfm)
+	* [SIFT (Distinctive Image Features from Scale-Invariant Keypoints)](#sift-distinctive-image-features-from-scale-invariant-keypoints)
+		* [Arch](#arch)
+		* [Argument](#argument)
+		* [补充](#补充)
+	* [SuperPoint](#superpoint)
+		* [Metric](#metric)
+
+<!-- vim-markdown-toc -->
 <font face="DejaVu Sans Mono" size="3">
 
 # Sfm
@@ -152,5 +164,44 @@ A Gaussian weighting function with $\sigma$ equal to one half of the descriptor 
 尺度空间方法将传统的单尺度图像信息处理技术纳入尺度不断变化的动态分析框架中，更容易获取图像的本质特征。尺度空间中各尺度图像的模糊程度逐渐变大，能够模拟人在距离目标由近到远时目标在视网膜上的形成过程。
 
 尺度空间满足视觉不变性。该不变性的视觉解释如下：当我们用眼睛观察物体时，一方面当物体所处背景的光照条件变化时，视网膜感知图像的亮度水平和对比度是不同的，因此要求尺度空间算子对图像的分析不受图像的灰度水平和对比度变化的影响，即满足灰度不变性和对比度不变性。另一方面，相对于某一固定坐标系，当观察者和物体之间的相对位置变化时，视网膜所感知的图像的位置、大小、角度和形状是不同的，因此要求尺度空间算子对图像的分析和图像的位置、大小、角度以及仿射变换无关，即满足平移不变性、尺度不变性、欧几里德不变性以及仿射不变性。
+
+## [SuperPoint](https://arxiv.org/abs/1712.07629)
+
+### Experiment
+
+### Argument
+
+这篇文章首先提出了多头的预测。也就是从 VGG head 中分出 prediction head 和 description head。减小了模型的参数。
+
+提出了一种类似的“自监督学习”方法。也就是先在合成的数据集上学习，然后再在真实图片中学习。同时通过前后 H 变换作为监督。
+
+新的方法：可以采用 PointNet 中的 global - local feature aggregation 的方法，将后层的特征向量上采样后与前层的拼接在一起，再对各个点预测。或者是用 feature pyramid 的手法。
+
+### Metric
+
+* Repeatability
+
+### Implementation
+
+* Magic Point
+
+在 magic_point.py 中。用的是 precision 和 recall
+
+| precision | recall |
+| :- | :- |
+| 预测正确的点除以所有预测点。| 预测正确的点除以所有的正确点。|
+
+```python
+precison = tf.reduce_sum(pred * labels) / tf.reduce_sum(pred)
+recall = tf.reduce_sum(pred * labels) / tf.reduce_sum(labels)
+```
+
+其中输出操作经过了一个 threshold 和 NMS(optional) 
+ 
+### 代码解读
+
+* base_model.py 
+
+\_gpu_tower : 将数据拆分到不同的 GPU 上。net_output 作为输出。训练时在不同 gpu 上构建计算图，并且提取模型参数和反向传播梯度。
 
 </font>

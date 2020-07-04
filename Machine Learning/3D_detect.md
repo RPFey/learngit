@@ -1,6 +1,51 @@
-# 3D Vision
 
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+<!-- vim-markdown-toc GFM -->
+
+* [3D Vision](#3d-vision)
+	* [VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection](#voxelnet-end-to-end-learning-for-point-cloud-based-3d-object-dectection)
+		* [Intro](#intro)
+		* [Architecture](#architecture)
+		* [Experiment](#experiment)
+		* [Arguments](#arguments)
+	* [Part-A2](#part-a2)
+		* [Intro](#intro-1)
+			* [related work](#related-work)
+		* [Arch](#arch)
+		* [Argument](#argument)
+		* [Code](#code)
+	* [PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation](#pointnet-deep-learning-on-point-sets-for-3d-classification-and-segmentation)
+		* [intro](#intro-2)
+		* [Arch](#arch-1)
+		* [Experiment](#experiment-1)
+		* [Argument](#argument-1)
+	* [Frustum PointNets](#frustum-pointnets)
+		* [Intro](#intro-3)
+		* [Arch](#arch-2)
+		* [Argument](#argument-2)
+		* [Implementation](#implementation)
+	* [Learning Depth-Guided Convolutions for Monocular 3D Object Detection](#learning-depth-guided-convolutions-for-monocular-3d-object-detection)
+	* [PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation](#pvn3d-a-deep-point-wise-3d-keypoint-voting-network-for-6dof-pose-estimation)
+		* [Intro](#intro-4)
+		* [Arch](#arch-3)
+		* [Implementation](#implementation-1)
+		* [Arguments](#arguments-1)
+	* [Real-time Fruit recognition and Grasp Estimation for Autonomous Apple Harvestnig](#real-time-fruit-recognition-and-grasp-estimation-for-autonomous-apple-harvestnig)
+		* [Summary](#summary)
+		* [Arch](#arch-4)
+	* [Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection](#contrast-prior-and-fluid-pyramid-integration-for-rgbd-salient-object-detection)
+		* [Intro](#intro-5)
+		* [Architeture](#architeture)
+		* [Experiments and Dataset](#experiments-and-dataset)
+		* [arguments](#arguments-2)
+	* [Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network](#dense-3d-point-cloud-reconstruction-using-a-deep-pyramid-network)
+		* [Intro](#intro-6)
+		* [Arch](#arch-5)
+	* [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
+		* [Intro](#intro-7)
+
+<!-- vim-markdown-toc -->
+
+# 3D Vision
 
 ## VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection
 
@@ -176,22 +221,35 @@ Summary:
 
 **The Problem of processing unordered sets by neural nets is a very fundamental and general problem. We expect that our ideas can be transferred to other domains as well.**
 
+Properties for Point Sets in $R^{n}$
+
+1. Unordered. Point cloud is a set of points without specific order. That's why they say if you want to use RNN, you can shuffle the points in variuos order and feed into the network.
+2. Interacting among points. The neighboring points form a meaningful subset.
+3. Invariance under transformations. 
+
 [25] first looks into this problem --> Deep Learning on Unordered Sets. They use a read-process-write network with attention mechanism to consume unordered input sets.
 
 ### Arch
 
 approximate a general function defined on a point set by applying a symmetric function on transformed elements in the set:
 $$ f(\{x_{1}, ..., x_{n}\}) = g(h(x_{1}), ..., h(x_{n})) $$
-from a point set to a real number. $h(x)$ --> mlp, $g$ max pooling layer.
+from a point set to a real number. $h(x)$ --> mlp, $g$ max pooling layer. The operations here, addition, multiplication and max pooling are all symmetric operation -- invariant to order of points.
 > That's what VEF layer does in VoxelNet.
+
+* Invariant to feature transform
+
+*这一点其实是在回答如何让网络具有空间旋转不变形*
 
 The idea of aligning 3D space is extended to feature space. (which originally is from STN) They apply a affine matrix ($A \in R^{64*64}$) in the feature space, (shown in the figure). A regularization loss is added to $A$ :
 $$ L_{reg} = ||I - AA^{T} ||^{2}_{F} $$
 > 还是希望A 尽量为正交阵, keep the length of feature vector.　这也是拉格朗日乘数法的一个思想，把约束项放到优化项里面。
 
-**Local and Global Information Aggregation**: After we get the output $[f_{1}, ..., f_{K}]$, which is a global feature, we concatenate it directly after the local feature point to aggregate imformation globaly and locally. 
+* Local and Global Information Aggregation 
 
-**Theoretical Analysis**
+After we get the output $[f_{1}, ..., f_{K}]$, which is a global feature, we concatenate it directly after the local feature point to aggregate imformation **globaly and locally**.
+> 这里有一个全局与局部结合的思想，从末端绕到初始端，再点对点预测。
+
+* Theoretical Analysis
 
 function $h$ and $g$ can approximate any continuous set function $f$, as in the worst case, the network can learn to conveert a point cloud into a volumetric representation. (voxelize way)
 
@@ -202,6 +260,10 @@ Robustness of the network. $f(S)$ is unchanged as long as a critical point set $
 
 **Data Augmentation**: jitter the position of each point by a Gaussian noise with zero mean and 0.02 standard deviation. 
 > a small gap between PointNet and MVCNN[23] multiview - CNN
+
+常见的应用有点云分割，识别。物体检测是在每个点上分类之后，然后用 BFS 算法在邻域内搜索，直到没有同类的点包括进来。
+
+拓展的应用有形状匹配。通过网络最后的 全局特征 来看两个物体形状是否相似。以及不同物体之间的对应点。（有点像三维角点匹配）
 
 ### Argument
 
@@ -464,3 +526,4 @@ Methods to analyze point cloud data[1]. relating SLAM tech[3,4]. 3D reconstrutio
 This paper focuses on localization techniques that rely on **registering large-scale point cloud** and a small point-cloud scanned within a scene at different times. The transformation between small point cloud (local point cloud) and large-scale point cloud (global point cloud) determines the position of camera.
 
 registration of point clouds. Iterative Closest Point (ICP) [18], correlation of Extended Gaussian Images in the Fourier Domain[20].
+
