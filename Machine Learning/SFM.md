@@ -1,3 +1,14 @@
+
+<!-- vim-markdown-toc GFM -->
+
+* [Sfm](#sfm)
+	* [SIFT (Distinctive Image Features from Scale-Invariant Keypoints)](#sift-distinctive-image-features-from-scale-invariant-keypoints)
+		* [Arch](#arch)
+		* [Argument](#argument)
+		* [补充](#补充)
+
+<!-- vim-markdown-toc -->
+
 <font face="DejaVu Sans Mono" size="3">
 
 # Sfm
@@ -154,3 +165,4 @@ A Gaussian weighting function with $\sigma$ equal to one half of the descriptor 
 尺度空间满足视觉不变性。该不变性的视觉解释如下：当我们用眼睛观察物体时，一方面当物体所处背景的光照条件变化时，视网膜感知图像的亮度水平和对比度是不同的，因此要求尺度空间算子对图像的分析不受图像的灰度水平和对比度变化的影响，即满足灰度不变性和对比度不变性。另一方面，相对于某一固定坐标系，当观察者和物体之间的相对位置变化时，视网膜所感知的图像的位置、大小、角度和形状是不同的，因此要求尺度空间算子对图像的分析和图像的位置、大小、角度以及仿射变换无关，即满足平移不变性、尺度不变性、欧几里德不变性以及仿射不变性。
 
 </font>
+
