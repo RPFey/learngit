@@ -1,4 +1,32 @@
-# linux
+
+<!-- vim-markdown-toc GFM -->
+
+- [变量](#%e5%8f%98%e9%87%8f)
+  - [tf.Variable()](#tfvariable)
+  - [gradient&learning rate operation](#gradientlearning-rate-operation)
+    - [clip gradient](#clip-gradient)
+    - [adjust learning rate](#adjust-learning-rate)
+    - [batch norm](#batch-norm)
+  - [fetch & feed](#fetch--feed)
+- [数据读取](#%e6%95%b0%e6%8d%ae%e8%af%bb%e5%8f%96)
+  - [batch & mini_batch](#batch--minibatch)
+  - [读取机制](#%e8%af%bb%e5%8f%96%e6%9c%ba%e5%88%b6)
+- [loss function](#loss-function)
+  - [optimizer](#optimizer)
+  - [least-square](#least-square)
+  - [softmax regression & cross entropy](#softmax-regression--cross-entropy)
+- [Module](#module)
+  - [save and load model](#save-and-load-model)
+- [operation](#operation)
+  - [NMS](#nms)
+- [Visualization](#visualization)
+  - [name_scope & variable_scope](#namescope--variablescope)
+  - [tensorboard](#tensorboard)
+- [Multi-GPU & distributed training](#multi-gpu--distributed-training)
+
+<!-- vim-markdown-toc -->
+
+#linux
 
 当有过多提示等级，可以修改 bashrc 降低提示等级
 
@@ -26,6 +54,8 @@ w = sess.run(weight) # ndarray type
 
 会话中赋值  tf.assign(a,b) —— 将 b 赋值给 a , 且返回是一个 op eg.
 
+> 注意， v = v1 + v1 与 v.assign(v1 + v2) 是两回事。前者是一个 op , 后者是变量赋值。
+
 ```python
 self.epoch_add_op = self.epoch.assign(self.epoch + 1) # epoch 自加操作
 ```
@@ -39,22 +69,41 @@ print([n.name for n in tf.get_default_graph().as_graph_def().node if 'Variable' 
 print(tf.global_variables())
 ```
 
+## gradient&learning rate operation
 
-
-## gradient
+### clip gradient
 
 如果对梯度有什么操作的话，可以构建如下图:
 
 ```python
-self.params = tf.trainable_variables() # get all the trainable gradients
-gradients = tf.gradients(self.loss, self.params)  # 相当于是求梯度的操作
+params = tf.trainable_variables() # get all the trainable gradients
+gradients = tf.gradients(loss, params)  # 相当于是求梯度的操作
 clipped_gradients, gradient_norm = tf.clip_by_global_norm(
 	gradients, max_gradient_norm)
+optimizer = tf.train.AdamOptimizer(learning_rate)
+apply_gradient_op = optimizer.apply_gradient(gradients, global_step=batch) # 更新
+
 ```
 
 这里是对所有参数的梯度进行一次放缩到 max_gradient_norm 。详细可见 [Pascau et al., 2012](http://arvix.org/abs/1211.5063.pdf)
 
+### adjust learning rate
 
+learning rate decay
+```python
+learning_rate = tf.train.exponential_decay(
+                    BASE_LEARNING_RATE,  # Base learning rate.
+                    batch * BATCH_SIZE,  # Current index into the dataset.
+                    DECAY_STEP,          # Decay step. 20000
+                    DECAY_RATE,          # Decay rate. 0.5
+                    staircase=True)
+learing_rate = tf.maximum(learning_rate, 0.00001) # CLIP THE LEARNING RATE!
+optimizer = tf.train.AdamOptimizer(learning_rate)
+```
+
+### batch norm
+
+batch norm 调参数
 
 ## fetch & feed
 
@@ -69,7 +118,6 @@ v=tf.placeholder(dtype= ... , shape=(...))  元组形式指明维度，维度可
 在 sess.run(op, feed_dict={<variable_name>:  <value_>}) 执行赋值并计算。 可以直接用 ndarray 。如果有多个操作，各个 placeholder 只需要赋值一次即可。
 
 常用方法： 最开始用 placeholder 设置输入数据格式， 最后用 sess.run() 放入数据
-
 
 # 数据读取
 
@@ -219,26 +267,84 @@ model.saver.save(sess, os.path.join(save_model_dir, 'checkpoint'), global_step=m
 
 matmul(a,b) 矩阵乘法
 
-tf.equal 判断元素是否相等， 返回布尔类型tensor; 相对的是 tf.not_equal . 这两个操作常用来作为 mask
+tf.equal 判断元素是否相等， 返回布尔类型tensor; 相对的是 tf.not_equal . 这两个操作常用来作为 mask。
+
+> 类似函数还有 tf.greater_equal
 
 ```python
 mask = tf.not_equal(tf.reduce_max(
         self.features, axis=2, keep_dims=True), 0)
 ```
 
+tf.where 提取位置的操作。
+
+```python
+tf.where(condition, x, y)
+```
+
+1. x, y 均为 None, 那么返回 condition 中为 True 的元素位置。
+2. 或者 x, y 与 condition 具有相同的形状，那么就是 condition 中为 True 的位置用 x 中对应位置的值填充，其余用 y 中位置的值填充。
+
 tf.cast(.. , dtype) 转变类型
+> 另一种是使用 tf.to_int32(tensor) / tf.to_float() 转变类型。
 
 tf.reduce_mean(..) 获得平均值 / tf.reduce_max 获得最大值。
 
 tf.split(value, num_or_size_split, axis, num=None, name='split') : 将 Tensor 在指定维度上划分
 
-tf.cond(pred, fn1, fn2) \<==\> if pred, do fn1; else fn2
+tf.cond(pred, fn1, fn2)  : if pred, do fn1; else fn2
 
 tf.set_shape()  相当于 reshape ; tf.stack([...]) 合并 ； tf.matrix_inverse 逆矩阵 ；
 
 tf.pad(tensor, padding)  在 tensor 上打补丁, padding=[[d1, d2],[d11, d22],[d21, d22]] 分别对应各个维度前后打多少。
 
 tf.slice(input, begin, size, name=None) 在 input 张量上截取。 begin[i] 代表第 i 个唯独上的 offset, size[i] 代表第 i 个维度上截取的数量
+
+tf.map_fn
+
+```python
+map_fn(fn, elems, dtype=None, parallel_iterations=None, back_prop=True,
+           swap_memory=False, infer_shape=True, name=None)
+```
+
+将 elems 这个 tensor 的第一个维度（注意不是第0个）展开，并分别传入 fn 函数中操作，再返回为一个张量。
+
+tf.nn.top_k() : 获取最高的 k 个值。像算法 KNN 中可以使用。
+
+## NMS
+
+```python
+def box_nms(prob, size, iou=0.1, min_prob=0.01, keep_top_k=0):
+    """Performs non maximum suppression on the heatmap by considering hypothetical
+    bounding boxes centered at each pixel's location (e.g. corresponding to the receptive
+    field). Optionally only keeps the top k detections.
+
+    Arguments:
+        prob: the probability heatmap, with shape `[H, W]`.
+        size: a scalar, the size of the bouding boxes.
+        iou: a scalar, the IoU overlap threshold.
+        min_prob: a threshold under which all probabilities are discarded before NMS.
+        keep_top_k: an integer, the number of top scores to keep.
+    """
+    with tf.name_scope('box_nms'):
+        pts = tf.to_float(tf.where(tf.greater_equal(prob, min_prob))) # 获取每个关键点的位置
+        size = tf.constant(size/2.)
+        boxes = tf.concat([pts-size, pts+size], axis=1) # 窗口大小 [pts_x - size, pts_y - size, pts_x + x, pts_y + size]
+        scores = tf.gather_nd(prob, tf.to_int32(pts)) # 提取每个关键点的概率值
+        with tf.device('/cpu:0'):
+            indices = tf.image.non_max_suppression(
+                    boxes, scores, tf.shape(boxes)[0], iou)  # TF 中内嵌的 NMS
+        pts = tf.gather(pts, indices)
+        scores = tf.gather(scores, indices)
+        if keep_top_k:
+            k = tf.minimum(tf.shape(scores)[0], tf.constant(keep_top_k))  # when fewer
+            scores, indices = tf.nn.top_k(scores, k) # k_top method
+            pts = tf.gather(pts, indices)
+        prob = tf.scatter_nd(tf.to_int32(pts), scores, tf.shape(prob))
+    return prob
+```
+
+这里用的是 SuperPoint 中各个关键点的 NMS
 
 # Visualization
 
@@ -251,18 +357,16 @@ variable_scope() 与 get_variable() 使用，实现变量的共享，即重复�
 ```python
 def get_scope_variable(scope, var, shape=None):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-        v = tf.get_variable(var, shape)
+        v = tf.get_variable(var, initializer=tf.random_normal(shape))
     return v
 
 v1 = get_scope_variable("foo", "v", [1])
 v2 = get_scope_variable("foo", 'v') # reuse varibale named 'v' under 'foo' scope
 ```
 
-
-
 get_trainable() 获得所有训练参数列表。get_collection(tf.Graphkeys.TRAIANABLE_VARIABLES, scope="...") scope 可以使用正则表达式。
 
-两者会开辟不同的空间。name_scope, 与 variable_scope 开辟的域会加在 Variable 声明的变量上； 而只有 variable_scope 声明的域会加在 get_variable() 创建的变量上。
+两者会开辟不同的空间。name_scope 与 variable_scope 开辟的域会加在 Variable 声明的变量上； 而只有 variable_scope 声明的域会加在 get_variable() 创建的变量上。
 
 关于 reuse， 在构建过程中如果同时有多个 example 经过同一个神经网络，就需要用到 reuse; 方法是将所经过的层设置为相同的名称，并将参数 reuse 设置为 true / 或者是 get_variable() 针对单个 tensor。 比如：
 
@@ -318,25 +422,15 @@ class VFElayer(object):
     
 ```
 
-   
-
 ## tensorboard
-
-
 
 # Multi-GPU & distributed training
 
 ```python
-gpu_options = tf.GPUOptions(pre_process_gpu_memory_fraction=cfg.GPU_MEMORY_FRACTION, # 1
-                           visible_device_list=cfg.GPU_AVAILABLE,　# '0,1'
-                           allow_growth=True)
-
-config = tf.ConfigProto(gpu_options=gpu_options,
-                       device_count={
-                           "GPU":cfg.GPU_USE_COUNT, # number of GPUs
-                       },
-                       allow_soft_placement=True)
-
+sess_config = tf.ConfigProto(device_count={'GPU': self.n_gpus},
+                                     allow_soft_placement=True)
+sess_config.gpu_options.allow_growth = True
+sess_config.gpu_options.per_process_gpu_memory_fraction = 0.9
 with tf.Session(config=config) as sess:
     # training procedure
 ```
@@ -344,7 +438,9 @@ with tf.Session(config=config) as sess:
 GPUOptions :
 
 * pre_process_gpu_memory_fraction : 每块GPU 使用显存上限的百分比。
+ 
 * visible_device_list : 使用 GPU 的 ID 号
+ 
 * allow_growth : 分配器将不会指定所有的GPU内存而是根据需求增长，但是由于不会释放内存，所以会导致碎片
 
 ConfigProto : 
@@ -358,3 +454,5 @@ ConfigProto :
 * intra_op_parallelism_threads=0：设置多个操作并行运算的线程数
 
 在具体训练时，需要在各GPU 上分别建立网络训练，然后在各GPU之间平均梯度。（具体见 UndepthFlow）
+
+在 [SuperPoint](https://github.com/rpautrat/SuperPoint) 中有 GPU tower。在 superpoint/model/base_model.py 中 _gpu_tower，处理多 GPU 运行。

@@ -279,6 +279,10 @@ multigpu 代表不同进程间，不同 GPU 上有 shape 相同的 Tensor, 可�
 
 torch.distributed.new_group 可以将各优先级的进程组建成新组，在这些新组中进行后面的组间信息交流。返回一个 group object
 
+## Template
+
+在 [PCDet](https://github.com/RPFey/PCDet) 中可以使用 distributed training.
+
 # pytorch Tutorials
 
 ## Data preparation

@@ -26,6 +26,7 @@
     - [work_queue](#workqueue)
     - [commander](#commander)
     - [navigation](#navigation)
+      - [数据准备](#%e6%95%b0%e6%8d%ae%e5%87%86%e5%a4%87)
     - [PID_control](#pidcontrol)
     - [bootloader](#bootloader)
     - [topic](#topic)
@@ -319,7 +320,7 @@ px4_add_module(
 int  // 入口函数
 gps_main(int argc, char *argv[])
 {
-return GPS::main(argc, argv);
+  return GPS::main(argc, argv);
 }
 /* 　在 main 中会调用一个 start_command_base 启用一个线程GPS 中的 task_spawn 有两种模式 MAIN, SECONDARY;对于 MAIN ， 入口函数 run_trampoline 在基类中定义， 调用run 函数， 另一个在 gps.cpp 下重新定义了*/
 
@@ -396,16 +397,16 @@ int pthread_create(FAR pthread_t *thread,  // 线程标识符
                    pthread_startroutine_t start_routine,  // 函数入口
                    pthread_addr_t arg)
 // 返回 0 成功， 正数失败
-    // 初始化线程属性
-    int pthread_attr_init(FAR pthread_attr_t *attr)
-    // 销毁进程属性
-    int pthread_attr_destroy(FAR pthread_attr_t *attr)
-    // 设置线程栈内存大小
-    int pthread_attr_setstacksize(FAR pthread_attr_t * attr, long stacksize)
-    //取得线程调度参数
-    int pthread_attr_getschedparam(FAR const pthread_attr_t * attr, FAR struct sched_param *param)
-    //设置线程调度参数
-    int pthread_attr_setschedparam(FAr pthread_attr_t *attr, FAR const struct sched_param *param)
+// 初始化线程属性
+int pthread_attr_init(FAR pthread_attr_t *attr);
+// 销毁进程属性
+int pthread_attr_destroy(FAR pthread_attr_t *attr);
+// 设置线程栈内存大小
+int pthread_attr_setstacksize(FAR pthread_attr_t * attr, long stacksize);
+//取得线程调度参数
+int pthread_attr_getschedparam(FAR const pthread_attr_t * attr, FAR struct sched_param *param);
+//设置线程调度参数
+int pthread_attr_setschedparam(FAr pthread_attr_t *attr, FAR const struct sched_param *param);
 //多参数传入
 typedef struct TaskArg_{
         int x;
@@ -494,6 +495,23 @@ nav_state : 导航状态 vehicle_state.msg 中 nav_state 决定。无人机会�
 
 在MissionBlock::mission_item_to_position_setpoin() 中设置目标点， is_mission_item_reached() 判断是否到达目标。
 
+进程主函数是 task_main()
+
+#### 数据准备
+
+1. vehicle_global_position
+2. vehicle_local_position
+3. vehicle_gps_position
+4. sensor_combined
+5. fw_pos_ctrl_status
+6. vehicle_status
+7. vehicle_land_detected
+8. home_position
+9. onboard_mission
+10. offboard_mission
+11. parameter_update
+12. vehicle_command
+
 ### PID_control
 
 四旋翼的姿态与位置控制在 /src/modules/mc_att_control (mc = multicopter)
@@ -566,13 +584,14 @@ uORB 实际是多个进程打开同一个设备文件，进程间通过此文件
 ```c++
 struct msg_struct msg;
 memset(&msg, 0, sizeof(msg));
-orb_advert_t pub = orb_advertise(ORB_ID(), &msg);
+orb_advert_t pub = orb_advertise(ORB_ID(...), &msg);
 
 // set your message
 orb_publish(ORB_ID(), pub, &msg);
 ```
 
 poll() 函数： waits for one of a set of files descriptors to become ready to perform(I/O), 用来等待消息发布。
+
 ```c++
 #include <poll.h>
 int poll(struct pollfd *fds, nfds_t nfds, int timeout);
@@ -583,6 +602,7 @@ struct pollfd {
   short revents; // returned events
 }
 ```
+
 events is an input parameter, specifying the event that application is interested in  for file descriptor.
 
 events 和 revents 可以有以下参数
@@ -592,19 +612,34 @@ events 和 revents 可以有以下参数
 2. POLLOUT Writing is possible
 
 orb_check() 可以替代 poll() 函数
+
 ```c++
-int orb_check(int handle, bool *updated);
+// int orb_check(int handle, bool *updated);
 
 bool updated;
-struct random_integer_data rd;
+topic_handle = orb_subscribe(ORB_ID(TopicName));
+struct msg_struct rd;
 
 /* check to see whether the topic has updated since the last time we read it */
 orb_check(topic_handle, &updated);
 
 if (updated) {
     /* make a local copy of the updated data structure */
-    orb_copy(ORB_ID(random_integer), topic_handle, &rd);
+    orb_copy(ORB_ID(TopicName), topic_handle, &rd);
     printf("Random integer is now %d\n", rd.r);
+}
+
+// 或者是使用教程里面的 poll 函数
+
+px4_pollfd_struct_t fds[] = {
+  { .fd = topic_handle, .events = POLLIN},
+};
+
+while(true){
+  int poll_ret = px4_poll(fds, 1, 1000);
+  if(fds[0].revents & POLLIN){
+    orb_copy(ORB_ID(TopicName), topic_handle, &rd); // 读取数据
+  }
 }
 ```
 
