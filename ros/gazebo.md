@@ -78,7 +78,7 @@ namespace gazebo
       this->model = _parent;
 
       // Listen to the update event. This event is broadcast every
-      // simulation iteration.
+      // simulation iteration. 这里注意事件的形式。
       this->updateConnection = event::Events::ConnectWorldUpdateBegin(
           std::bind(&ModelPush::OnUpdate, this));
     }
@@ -102,7 +102,9 @@ namespace gazebo
 }
 ```
 
-在赋予物体运动特性时，注意把 static 这个标签设置为 false
+> 在赋予物体运动特性时，注意把 static 这个标签设置为 false !
+
+`physics::Model_Ptr` 是指向模型的指针， `sdf::ElementPtr` 指向 sdf 文件中传入模型的参数，用来读取。
 
 ## world
 

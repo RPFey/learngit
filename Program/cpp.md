@@ -48,17 +48,23 @@ p2.reset(p1); // 释放当前对象，并指向 p1
 
 ## 关键字
 
-override:
+* override
 
 添加在基类的虚函数后，如果之后没有实现这些虚函数则会报错。
 
-extern "C" :
+* extern "C"
 
 正确实现 c++ 调用其他 C 语言代码。指示编译器这部分代码按照 C 语言编译。这主要是因为编译 C 函数时不会带上函数的参数类型（C 语言不支持函数重载）
+
+* attribute
 
 \__attribute__((visibility('default'))):
 
 控制共享库 (.so) 输出符号。'default' 代表其可以被导出。'hidden' 则不行。
+
+* virtual
+
+虚函数。在基类中声明时需要加 virtual 关键字，派生类中重新定义时加不加都可以。
 
 ## 指针
 

@@ -1,28 +1,29 @@
 
 <!-- vim-markdown-toc GFM -->
 
-- [变量](#%e5%8f%98%e9%87%8f)
-  - [tf.Variable()](#tfvariable)
-  - [gradient&learning rate operation](#gradientlearning-rate-operation)
-    - [clip gradient](#clip-gradient)
-    - [adjust learning rate](#adjust-learning-rate)
-    - [batch norm](#batch-norm)
-  - [fetch & feed](#fetch--feed)
-- [数据读取](#%e6%95%b0%e6%8d%ae%e8%af%bb%e5%8f%96)
-  - [batch & mini_batch](#batch--minibatch)
-  - [读取机制](#%e8%af%bb%e5%8f%96%e6%9c%ba%e5%88%b6)
-- [loss function](#loss-function)
-  - [optimizer](#optimizer)
-  - [least-square](#least-square)
-  - [softmax regression & cross entropy](#softmax-regression--cross-entropy)
-- [Module](#module)
-  - [save and load model](#save-and-load-model)
-- [operation](#operation)
-  - [NMS](#nms)
-- [Visualization](#visualization)
-  - [name_scope & variable_scope](#namescope--variablescope)
-  - [tensorboard](#tensorboard)
-- [Multi-GPU & distributed training](#multi-gpu--distributed-training)
+* [linux](#linux)
+* [变量](#变量)
+	* [tf.Variable()](#tfvariable)
+	* [gradient&learning rate operation](#gradientlearning-rate-operation)
+		* [clip gradient](#clip-gradient)
+		* [adjust learning rate](#adjust-learning-rate)
+		* [batch norm](#batch-norm)
+	* [fetch & feed](#fetch--feed)
+* [数据读取](#数据读取)
+	* [batch & mini_batch](#batch--mini_batch)
+	* [读取机制](#读取机制)
+* [loss function](#loss-function)
+	* [optimizer](#optimizer)
+	* [least-square](#least-square)
+	* [softmax regression & cross entropy](#softmax-regression--cross-entropy)
+* [Module](#module)
+	* [save and load model](#save-and-load-model)
+* [operation](#operation)
+	* [NMS](#nms)
+* [Visualization](#visualization)
+	* [name_scope & variable_scope](#name_scope--variable_scope)
+	* [tensorboard](#tensorboard)
+* [Multi-GPU & distributed training](#multi-gpu--distributed-training)
 
 <!-- vim-markdown-toc -->
 
@@ -276,6 +277,8 @@ mask = tf.not_equal(tf.reduce_max(
         self.features, axis=2, keep_dims=True), 0)
 ```
 
+tf.maximum(a,b) 选择 a,b 中的较大值
+
 tf.where 提取位置的操作。
 
 ```python
@@ -298,7 +301,7 @@ tf.set_shape()  相当于 reshape ; tf.stack([...]) 合并 ； tf.matrix_inverse
 
 tf.pad(tensor, padding)  在 tensor 上打补丁, padding=[[d1, d2],[d11, d22],[d21, d22]] 分别对应各个维度前后打多少。
 
-tf.slice(input, begin, size, name=None) 在 input 张量上截取。 begin[i] 代表第 i 个唯独上的 offset, size[i] 代表第 i 个维度上截取的数量
+tf.slice(input, begin, size, name=None) 在 input 张量上截取。 begin[i] 代表第 i 个维度上的 offset, size[i] 代表第 i 个维度上截取的数量
 
 tf.map_fn
 

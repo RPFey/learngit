@@ -12,6 +12,10 @@
     - [Metric](#metric)
     - [Implementation](#implementation)
     - [代码解读](#代码解读)
+  - [Unsuperpoint](#unsuperpoint)
+    - [Intro](#intro)
+    - [Arch](#arch-1)
+  - [Argument](#argument-2)
 
 <!-- vim-markdown-toc -->
 <font face="DejaVu Sans Mono" size="3">
@@ -181,6 +185,8 @@ A Gaussian weighting function with $\sigma$ equal to one half of the descriptor 
 
 新的方法：可以采用 PointNet 中的 global - local feature aggregation 的方法，将后层的特征向量上采样后与前层的拼接在一起，再对各个点预测。或者是用 feature pyramid 的手法。
 
+<font color="##ff0000"> why not use those distinct discriptors as a supervision for interest points. An unsupervised cluster operation can be performed. We can choose those "single" points (far from other points) as interest points.</font>
+
 ### Metric
 
 * Repeatability
@@ -207,6 +213,60 @@ recall = tf.reduce_sum(pred * labels) / tf.reduce_sum(labels)
 * base_model.py 
 
 \_gpu_tower : 将数据拆分到不同的 GPU 上。net_output 作为输出。训练时在不同 gpu 上构建计算图，并且提取模型参数和反向传播梯度。
+
+## [Unsuperpoint](https://arxiv.org/abs/1907.04011)
+
+### Intro
+
+related work:
+
+| method | description | advantage | disadvantage |
+| :- | :- | :- | :- |
+| TILDE | pseudo ground truths are obtained from DoG | repeatable across all sequences | static view point images |
+| Quad-network | learn points that are preserved under image transformations | unsupervies | no descriptors provided |
+| Lift | 1. detector provides score map to crop patches of interest points. <br/> 2. STN rotates patches by the estimated orientation. <br/> 3. generate descriptors. | whole pipeline, end - to - end | hard to train |
+| SuperPoint | (omitted) | synthetic datasets | 1. problems of generalizing to real datasets. <br/> 2. several rounds of homography adaptation.<br/> 3. a good interest point is predefined as corners etc by the author. |
+
+### Arch
+
+<img src=../img/CVpaper/UnsuperPointArch.PNG />
+
+* Position Module
+
+Output of this module is $(H/8, W/8, 2)$, 2 for the regression of x, y which is activated by sigmoid function (bound to [0,1]).Since the feature map is subsampled by a factor of 8, the relative position is estimated for each 8*8 patch. 
+> similar to YOLO, those grid methods.
+
+* Self-supervised framework
+
+将同一张图片经过 H 变换，相应的点之间有明确的对应关系，以此作为特征点之间的监督。
+> 还是一种 consistency after transformation 的思想原则
+
+* Point Correspondence
+
+将 A 中的点变换到 B 中，计算 $|| P^{A->B} - P^{B} ||_{2}$ 作为距离。Point-Pair correspondence relation 为最近邻并且值小于一个阈值。
+
+* Loss function
+
+$L^{usp}$ : Unsupervised point loss to learn position and score of interest points.
+
+$$ L^{usp} = \alpha_{position}\sum_{k=1}^{K} l_{k}^{position} + \alpha_{score} \sum_{k=1}^{K} l_{k}^{score} + \sum_{k=1}^{K} l_{k}^{usp} $$
+
+$l_{k}^{position}$ 就是对应点在图像上的几何距离。$l_{k}^{score}$ 则是对应点预测的 score for interest point 应该相同。
+
+$l_{k}^{usp}$
+
+$L^{uni_xy}$ : regularization term to encourage a uniform distribution term
+
+## Argument
+
+这样一种亚像素级别的检测，在 SIFT 中也有体现。通过在 DoG 上面用泰勒展开找到极值点，来进一步精确修正关键点的位置。同时也相当于用了 8*8 的 NMS。并且可以用这个作为在 descriptor map 上插值的依据。（设计确实很巧妙）
+
+认为 $l_{k}^{score} = (\hat{s_{k}^{A}} - \hat{s_{k}^{B}})$ 设计有些失败，作为一种概率分布，用相对熵度量会不会更好。对于 $l_{k}^{usp}$ 也很难理解。
+> 如果作为点对点之间的对应，用 MSE 也能够理解。
+
+Q :
+
+why regression enables fully unsupervied learning ?
 
 </font>
 
