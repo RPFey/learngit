@@ -1,47 +1,50 @@
 
 <!-- vim-markdown-toc GFM -->
 
-* [3D Vision](#3d-vision)
-	* [VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection](#voxelnet-end-to-end-learning-for-point-cloud-based-3d-object-dectection)
-		* [Intro](#intro)
-		* [Architecture](#architecture)
-		* [Experiment](#experiment)
-		* [Arguments](#arguments)
-	* [Part-A2](#part-a2)
-		* [Intro](#intro-1)
-			* [related work](#related-work)
-		* [Arch](#arch)
-		* [Argument](#argument)
-		* [Code](#code)
-	* [PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation](#pointnet-deep-learning-on-point-sets-for-3d-classification-and-segmentation)
-		* [intro](#intro-2)
-		* [Arch](#arch-1)
-		* [Experiment](#experiment-1)
-		* [Argument](#argument-1)
-	* [Frustum PointNets](#frustum-pointnets)
-		* [Intro](#intro-3)
-		* [Arch](#arch-2)
-		* [Argument](#argument-2)
-		* [Implementation](#implementation)
-	* [Learning Depth-Guided Convolutions for Monocular 3D Object Detection](#learning-depth-guided-convolutions-for-monocular-3d-object-detection)
-	* [PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation](#pvn3d-a-deep-point-wise-3d-keypoint-voting-network-for-6dof-pose-estimation)
-		* [Intro](#intro-4)
-		* [Arch](#arch-3)
-		* [Implementation](#implementation-1)
-		* [Arguments](#arguments-1)
-	* [Real-time Fruit recognition and Grasp Estimation for Autonomous Apple Harvestnig](#real-time-fruit-recognition-and-grasp-estimation-for-autonomous-apple-harvestnig)
-		* [Summary](#summary)
-		* [Arch](#arch-4)
-	* [Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection](#contrast-prior-and-fluid-pyramid-integration-for-rgbd-salient-object-detection)
-		* [Intro](#intro-5)
-		* [Architeture](#architeture)
-		* [Experiments and Dataset](#experiments-and-dataset)
-		* [arguments](#arguments-2)
-	* [Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network](#dense-3d-point-cloud-reconstruction-using-a-deep-pyramid-network)
-		* [Intro](#intro-6)
-		* [Arch](#arch-5)
-	* [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
-		* [Intro](#intro-7)
+- [3D Vision](#3d-vision)
+  - [VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection](#voxelnet-end-to-end-learning-for-point-cloud-based-3d-object-dectection)
+    - [Intro](#intro)
+    - [Architecture](#architecture)
+    - [Experiment](#experiment)
+    - [Arguments](#arguments)
+  - [Part-A2](#part-a2)
+    - [Intro](#intro-1)
+      - [related work](#related-work)
+    - [Arch](#arch)
+    - [Argument](#argument)
+    - [Code](#code)
+  - [PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation](#pointnet-deep-learning-on-point-sets-for-3d-classification-and-segmentation)
+    - [intro](#intro-2)
+    - [Arch](#arch-1)
+    - [Experiment](#experiment-1)
+    - [Argument](#argument-1)
+  - [PointNet++](#pointnet)
+    - [Intro](#intro-3)
+    - [Argument](#argument-2)
+  - [Frustum PointNets](#frustum-pointnets)
+    - [Intro](#intro-4)
+    - [Arch](#arch-2)
+    - [Argument](#argument-3)
+    - [Implementation](#implementation)
+  - [Learning Depth-Guided Convolutions for Monocular 3D Object Detection](#learning-depth-guided-convolutions-for-monocular-3d-object-detection)
+  - [PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation](#pvn3d-a-deep-point-wise-3d-keypoint-voting-network-for-6dof-pose-estimation)
+    - [Intro](#intro-5)
+    - [Arch](#arch-3)
+    - [Implementation](#implementation-1)
+    - [Arguments](#arguments-1)
+  - [Real-time Fruit recognition and Grasp Estimation for Autonomous Apple Harvestnig](#real-time-fruit-recognition-and-grasp-estimation-for-autonomous-apple-harvestnig)
+    - [Summary](#summary)
+    - [Arch](#arch-4)
+  - [Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection](#contrast-prior-and-fluid-pyramid-integration-for-rgbd-salient-object-detection)
+    - [Intro](#intro-6)
+    - [Architeture](#architeture)
+    - [Experiments and Dataset](#experiments-and-dataset)
+    - [arguments](#arguments-2)
+  - [Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network](#dense-3d-point-cloud-reconstruction-using-a-deep-pyramid-network)
+    - [Intro](#intro-7)
+    - [Arch](#arch-5)
+  - [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
+    - [Intro](#intro-8)
 
 <!-- vim-markdown-toc -->
 
@@ -108,6 +111,7 @@ Random Sampling from voxels (this is really like yolo, make grids on the whole p
 一种方法是直接用一个 bbox 将物体框起来，然后只用左上与右下坐标表示，计算 box overlap, 但是误差很大。另一种就是蒙特卡洛的方法，打点计算面积。由于相同的点在两个矩形中的坐标实际上就是一个H 变换。 
 $$\vec{x} = c_{1}*\vec{\alpha_{1}} + c_{2}*\vec{\alpha_{2}} + \vec{t} = c_{1}'*\vec{\alpha_{1}'} + c_{2}'*\vec{\alpha_{2}'} + \vec{t'} \\ c_{1}, c_{2}, c_{1}', c_{2}' \in (0,1) $$
 通过一个变换后检查是否在$(0,1)$范围内来求交。此方法消耗很大的计算量和内存。
+> 最后用 detectron2 里面的 iou 求解。
 
 优点：
 
@@ -284,6 +288,24 @@ Point Net 与 Voxel Net 采取两种方式解决点云问题。前者是基于�
 
 [25](https://arvix.org/abs/1511.06391) 是关于序列的一篇好文。
 
+## [PointNet++](https://arxiv.org/pdf/1706.02413.pdf) 
+
+### Intro
+
+The drawback of PointNet is that it doesn't capture the local structure of the  distance metric.
+
+Overview and Framework:
+
+1. partition the set of points into overlapping local regions
+2. extract local features capturing fine geometric structures from small neighborhoods.
+3. group local features into larger units and process them to produce higher level features.
+
+For local features, PointNet++ uses PointNet recursively on the partitions of the input sets.
+
+For partition generation, each partition is defined as a neighborhood ball in the underlying Euclidean space. Considering that the input point datasets are unevenly distributed among the space, we use large neighborhood to include more points inside.(which is counter to CNNs)
+
+### Argument
+
 ## Frustum PointNets
 
 ### Intro
@@ -348,11 +370,18 @@ Corner Loss : 直接计算8点距离作为角度的误差
 2. NUM_HEADING_BIN --> classification for angle in BIN index ;
 3. NUM_HEADING_BIN --> normalized residuals for each prediction in BIN
 4. NUM_SIZE_CLUSTER --> BIN index for w,h,l
-5. 3*NUM_SIZE_CLUSTER --> residuals for w,h,l 
+5. 3*NUM_SIZE_CLUSTER --> residuals for w,h,l
+
+在 frustum_pointnets_v2.py get_model 中构建模型
+
+1. 点云分割网络：point_cloud, one_hot_vec 作为输出，输出是每个点的 logits (B*M*2)
+2. 通过 mask 选择出属于物体的点，并且坐标系变换到这些点的中心。
+3. 中心回归网络：上一步得到的点云和 one_hot_vec 作为输入，输出是该坐标系下物体中心的 xyz
+4. bbox 回归: 在物体中心坐标系下的点云和 one_hot_vec 作为输入，输出是 bin + res.
+
+model_util.py 中有对 bin 的参数设置和解算。
 
 ## Learning Depth-Guided Convolutions for Monocular 3D Object Detection
-
-
 
 ## PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation
 
@@ -373,7 +402,7 @@ Analysis of the problem -- 6 Dof estimation
 
 ### Arch
 
-<img src=../img/Cvpaper/PVN3D.png height="300" width="400" />
+<img src=../img/CVpaper/PVN3D.png height="500" width="1200" />
 
 **Feature Extraction and Fusion** --> **3D Keypoint Detection** <--> **Instance Semantic Segmentation**
 
@@ -445,9 +474,9 @@ Summary as below:
 
 1. a contrast loss is designed to utiliza the contrast prior, for depth map enhancement.
 2. fluid pyramid integration is proposed to make use of multi-scale cross-modal features.
-
+ 
 ### Architeture
-
+ 
 the whole net is shown as below:
 ![arch](../img/CVpaper/NetArch.png)
 
@@ -480,11 +509,11 @@ and Mean Average Error(measure the difference between two maps):
 $$ \epsilon = \frac{1}{W*H} \sum_{x=1}^{W} \sum_{y=1}^{H} |P(x,y)-Y(x,y)| $$
 S-measure [14 ]:
 $$ S_{measure} = \alpha * S_{o} + (1-\alpha)*S_{r}$$
-
+ 
 ### arguments
 
 the integration method (depth and RGB) is novel. I think this can be used as a preprocess on the depth image
-
+ 
 ## Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network
 
 ### Intro

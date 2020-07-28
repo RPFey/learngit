@@ -1,8 +1,9 @@
 # RNN
 
-对信息的理解可以分为时域， x(t), x(t+1), ... ; 或者空域(图片), I(row), I(row+1), ... 
+对信息的理解可以分为时域， x(t), x(t+1), ... ; 或者空域(图片), I(row), I(row+1), ...
 
 定义 ：
+
 ```python
 TIME_STEP = 28
 # each input size (like a row in a image)
@@ -10,24 +11,27 @@ INPUT_SIZE = 28
 ```
 
 网络(分类)
+
 ```python
 self.rnn = nn.LSTM(
     input_size 
     hidden_size  # rnn 中的隐藏层, 也是输出维度
     num_layers
-    batch_first  # 确定batch 维度  (batch_size, time_step,input_size)   
+    batch_first  # 确定batch 维度  (batch_size, time_step,input_size)
 )
 self.out = nn.Linear(input_size, output_size)
 
-r_out, (h_n, h_c) = self.rnn(x, None) 
+r_out, (h_n, h_c) = self.rnn(x, None)
 # (h_n, h_c) "主线的记忆", None 初始时刻的hidden state
-out = self.out(r_out[:,-1,:])  # r_out (batch, time_step, input_size) 
+out = self.out(r_out[:,-1,:])  # r_out (batch, time_step, input_size)
 ```
+
 相当于一次输入中 (time_step, input_size) 通过 rnn 后自动调用。
 
 而下一个 batch_sample 时上一次的记忆则无效(没有采用hidden_state)
 
 回归
+
 ```python
 # 网络相同
 def forward(self,x,hidden_state):
@@ -42,7 +46,8 @@ def forward(self,x,hidden_state):
 
 since it's regression, it returns the prediction at each time step
 
-train 
+train
+
 ```python
 h_state = None      # for initial hidden state
 
@@ -51,6 +56,7 @@ for step in range(100):
     # !! next step is important !!
     h_state = h_state.data        # repack the hidden state, break the connection from last iteration
 ```
+
 不断更新 hidden_state
 
 # encoder - decoder 
@@ -105,14 +111,14 @@ def printnorm(self, input, output):
     # input is a tuple of packed tensor
     # output is a Tensor, whose data is the interest
     print('input size : ', input[0].size()) # input[0] is the input tensor
-    
+
 net.conv2.register_forward_hook(printnorm) # when call forward, the function will be called
 
 def printgrad(self, grad_input, grad_output):
     # input and output are tuples
     print('grad_input size : ', grad_input[0].size())
     print('grad_output size : ', grad_output[0].norm())
-    
+
 net.conv2.register_backward_hook(printgrad) 
 ```
 

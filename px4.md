@@ -3,17 +3,17 @@
 
 - [PX4](#px4)
   - [Build (make)](#build-make)
-  - [仿真](#%e4%bb%bf%e7%9c%9f)
-    - [先编译后仿真](#%e5%85%88%e7%bc%96%e8%af%91%e5%90%8e%e4%bb%bf%e7%9c%9f)
-  - [书写规则](#%e4%b9%a6%e5%86%99%e8%a7%84%e5%88%99)
+  - [仿真](#仿真)
+    - [先编译后仿真](#先编译后仿真)
+  - [书写规则](#书写规则)
   - [hardware](#hardware)
     - [S-BUS](#s-bus)
     - [PWM&PPM](#pwmppm)
     - [sensor](#sensor)
-  - [启动脚本分析](#%e5%90%af%e5%8a%a8%e8%84%9a%e6%9c%ac%e5%88%86%e6%9e%90)
-  - [Mixer (混合控制)](#mixer-%e6%b7%b7%e5%90%88%e6%8e%a7%e5%88%b6)
-  - [构架](#%e6%9e%84%e6%9e%b6)
-    - [文件构架](#%e6%96%87%e4%bb%b6%e6%9e%84%e6%9e%b6)
+  - [启动脚本分析](#启动脚本分析)
+  - [Mixer (混合控制)](#mixer-混合控制)
+  - [构架](#构架)
+    - [文件构架](#文件构架)
   - [concept](#concept)
   - [drivers(hardware)](#drivershardware)
     - [Fundamentals](#fundamentals)
@@ -23,19 +23,19 @@
     - [EKF2](#ekf2)
   - [application](#application)
     - [multi-thread](#multi-thread)
-    - [work_queue](#workqueue)
+    - [work_queue](#work_queue)
     - [commander](#commander)
     - [navigation](#navigation)
-      - [数据准备](#%e6%95%b0%e6%8d%ae%e5%87%86%e5%a4%87)
-    - [PID_control](#pidcontrol)
+      - [数据准备](#数据准备)
+    - [PID_control](#pid_control)
     - [bootloader](#bootloader)
     - [topic](#topic)
     - [CMakeLists.txt](#cmakeliststxt)
   - [ROS](#ros)
   - [Mavlink](#mavlink)
   - [uORB](#uorb)
-- [多线程](#%e5%a4%9a%e7%ba%bf%e7%a8%8b)
-  - [控制](#%e6%8e%a7%e5%88%b6)
+- [多线程](#多线程)
+  - [控制](#控制)
 
 <!-- vim-markdown-toc -->
 
@@ -561,9 +561,22 @@ and add these examples under ./board/../default.cmake
 
 ## ROS
 
-在 mavros 下 offb_node.cpp 中展示如何控制飞机(waypoints) 
+Mavros 连接飞机时
 
-在切换到 offboard 模式前，setpoints 里面需要有信息。控制流程为 --> OFFBOARD --> ARM --> publish waypoints 
+```bash
+roslaunch mavros px4.launch fuc_url:="udp://:14540@[remote_host]:[port]"
+```
+
+remote_host 是远程主机 ip, port 在仿真信息中找
+
+```plain
+INFO [mavlink] mode:Normal, data rate: 4000000 B/s on udp port 14570 remote port 14550
+INFO [mavlink] mode:Onboard, data rate: 4000000 B/s on udp port 14580 remote port 14540
+```
+
+在 mavros 下 offb_node.cpp 中展示如何控制飞机(waypoints)
+
+在切换到 offboard 模式前，setpoints 里面需要有信息。控制流程为 --> OFFBOARD --> ARM --> publish waypoints
 
 ## Mavlink
 

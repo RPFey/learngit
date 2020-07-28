@@ -1,3 +1,16 @@
+
+<!-- vim-markdown-toc GFM -->
+
+- [python](#python)
+  - [Multiprocessing](#multiprocessing)
+  - [安装包](#安装包)
+  - [Argparse](#argparse)
+  - [Base Tools](#base-tools)
+    - [Dict](#dict)
+  - [conda](#conda)
+
+<!-- vim-markdown-toc -->
+
 # python
 
 python可以直接加版本号在终端中运行相应的python 版本 ： eg. python3.7
@@ -72,7 +85,61 @@ params :
 
 --user (when don't have root permission)
 
-conda 作为环境管理工具
+## Argparse
+
+* 开关作用 action
+
+```python
+parser = argparse.ArgumentParser()
+parser.add_argument('--gen_train', action='store_true', help='...')
+args = parser.parse_args()
+
+
+print(args.gen_train)
+```
+
+当时用
+
+```bash
+python test.py --gen_train
+```
+
+会输出 True
+
+* parent
+
+```python
+parent_parser = argparse.ArgumentParser(add_help=False)
+parent_parser.add_argument('--parent', type=int)
+
+foo_parser = argparse.ArgumentParser(parents=[parent_parser])
+foo_parser.add_argument('foo')
+foo_parser.parse_args(['--parent', '2', 'XXX'])
+# Namespace(foo='XXX', parent=2)
+
+bar_parser = argparse.ArgumentParser(parents=[parent_parser])
+bar_parser.add_argument('--bar')
+bar_parser.parse_args(['--bar', 'YYY'])
+# Namespace(bar='YYY', parent=None)
+```
+
+parent 通过继承的方法，避免重复定义参数。
+
+>一般父参数会将 `add_help` 设置为 `False`，防止出现两个 `-h`。
+
+* parse_known_args
+
+It works much like `parse_args()` except that it does not produce an error when extra arguments are present. Instead, it returns a two item tuple containing the `populated namespace` and the list of `remaining argument strings`.
+
+## Base Tools
+
+### Dict
+
+`.get(key, default=None)`
+
+## conda
+
+作为环境管理工具
 
 如果出现安装包之间不兼容（incompatible with each other）:
 
