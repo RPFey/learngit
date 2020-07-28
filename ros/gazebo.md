@@ -1,3 +1,28 @@
+
+<!-- vim-markdown-toc GFM -->
+
+- [GAZEBO](#gazebo)
+  - [structure](#structure)
+  - [sensor](#sensor)
+  - [plugins](#plugins)
+    - [model_plugin](#model_plugin)
+      - [related API](#related-api)
+    - [world_plugin](#world_plugin)
+    - [sensor_plugin](#sensor_plugin)
+  - [Node](#node)
+  - [world](#world)
+    - [DEM file](#dem-file)
+  - [sensor](#sensor-1)
+  - [model](#model)
+    - [构建流程](#构建流程)
+  - [urdf & sdf](#urdf--sdf)
+  - [ignition](#ignition)
+  - [Connect to ROS](#connect-to-ros)
+    - [gazebo_ros plugins](#gazebo_ros-plugins)
+    - [camera plugin parameters](#camera-plugin-parameters)
+
+<!-- vim-markdown-toc -->
+
 # GAZEBO
 
 gazebo --verbose 会显示所有信息 / -u 进入时处于暂停
@@ -30,13 +55,13 @@ add noise to sensors (lidar / imu / camera)
 
 ## plugins
 
-Load functions create pointers and set it to sensors
+Load functions create pointers and set it to sensors / models / worlds.
 
 ```shell
 gzserver -s <plugin_filename>
 ```
 
-plugins 分为： world, model, sensor, system, visual, gui
+**一定要记得在最后添加 GZ_REGISTER_WORLD_PLUGIN(WorldPluginTutorial)**
 
 ```c++
 #include <gazebo/gazebo.hh>
@@ -59,7 +84,14 @@ namespace gazebo
 }
 ```
 
-Load 中 _sdf是 导入的 sdf 文件，含有标签信息
+Load 中 _sdf是 导入的 sdf 文件，含有标签信息，其参数可以通过如下方式读取
+
+```c++
+if (_sdf->HasElement("jointName"))
+    joint_name_ = _sdf->GetElement("jointName")->Get<std::string>();
+else
+  gzerr << "[gazebo_motor_model] Please specify a jointName, where the rotor is attached.\n";
+```
 
 ### model_plugin
 
@@ -78,7 +110,7 @@ namespace gazebo
       this->model = _parent;
 
       // Listen to the update event. This event is broadcast every
-      // simulation iteration.
+      // simulation iteration. 这里注意事件的形式。
       this->updateConnection = event::Events::ConnectWorldUpdateBegin(
           std::bind(&ModelPush::OnUpdate, this));
     }
@@ -102,7 +134,89 @@ namespace gazebo
 }
 ```
 
-在赋予物体运动特性时，注意把 static 这个标签设置为 false
+> 在赋予物体运动特性时，注意把 static 这个标签设置为 false !
+
+`physics::Model_Ptr` 是指向模型的指针， `sdf::ElementPtr` 指向 sdf 文件中传入模型的参数，用来读取。
+
+#### related API
+
+* physics::ModelPtr model_
+
+获得仿真世界的指针，一般在 Load 函数（模型装载时调用），用来取得世界的参数
+
+```c++    
+physics::WorldPtr world_ = model_ -> GetWorld(); 
+```
+
+获得模型位姿
+
+```c++ 
+ignition::math::Pose3d pose = model_->WorldPose();
+```
+
+获得模型关节 --> 力学模型
+```c++
+physics::JointPtr joint_ = model_->GetJoint(joint_name_);
+```
+
+### world_plugin
+
+获取世界参数
+
+重力加速度： `world_->Gravity()`
+
+仿真时间: `world_->GetSimTime()`
+
+### sensor_plugin
+
+此时加载函数会成为,对应着调用的 sensor
+
+```c++
+void OpticalFlowPlugin::Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
+```
+
+* 相机传感器
+
+```c++
+// 首先要将传入的传感器指针转换为对应的传感器类型
+sensors::CameraSensorPtr parentSensor = std::dynamic_pointer_cast<sensors::CameraSensor>(_sensor);
+// CameraSensor or DethCameraSensor
+
+// 获取 render::camera 指针
+rendering::CameraPtr camera = parenSensor->GetCamera();
+
+// 绑定更新函数
+event::ConnectionPtr newFrameConnection;
+newFrameConnection = camera->ConnectNewImageFrame
+(
+	boost::bind(&Update_func, this, _1,);			
+)
+
+// 激活相机
+parentSensor -> SetActive(true);
+```
+
+camera 分为两类传感器，一是 sensor 中的，还有一个是 render 中的。 
+
+sensor 中函数
+
+SaveFrame : 直接保存图片
+
+render 中函数
+
+LastRenderWallTime  获取上一帧的时间
+> 注意是以 us 计时
+
+## Node
+
+gazebo 内部也有通信机制，与 ROS 类似。一般在 `::Load` 中创建 `NodePtr` 相当于 `Node Handle`
+
+```c++
+transport::NodePtr node_handle_;
+node_handle_ = transport::NodePtr(new transport::Node());
+node_handle_->Init(namespace_);
+transport::SubscriberPtr command_sub_ = node_handle_->Subscribe<mav_msgs::msgs::CommandMotorSpeed>("~/" + model_->GetName() + command_sub_topic_, &GazeboMotorModel::VelocityCallback, this); // 注意类中最后的 this
+```
 
 ## world
 
@@ -205,7 +319,7 @@ add mesh in geometry
 
 具体文件在 robot_sim_demo 下的　urdf/ *.urdf.xacro 中，　可以看到各个　frame　之间的转换
 
-udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中使用。
+udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中使用。[urdf_reference](https://wiki.ros.org/urdf)
 
 ```xml
 <!-- xacro 中的 "函数调用"-->
@@ -254,9 +368,92 @@ udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中�
 </sdf>
 ```
 
-## With ROS
+## ignition
+
+ignition::math 中提供了数学库
+
+* ignition::math::Pose3d 
+
+d 也可以是 f(float), i(integer)
+
+获取位置和转角 : .Pos() 获取位置， .Rot() 获取旋转的四元数
+
+位置变换: .CoorPositionAdd() 是加上一个平移， .CoorRotationAdd() 是加上一个旋转。 .CoorPositionSolve() 用来求相对位姿。
+
+## Connect to ROS
+
+`.launch` file to spawn the world. `.world` file is found under the `GAZEBO_RESOURCE_PATH/worlds` directory.
+
+```xml
+<launch>
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="worlds/mud.world"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="recording" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+</launch>
+```
+
+For urdf models, there are two ways to spawn.
+
+1. ROS service call spawn method. You have to use a small python script to call the ros service
+2. Model Database Method.
+
+for `urdf` file, add following commands in the `.launch` file
+```xml
+<!-- Spawn a robot into Gazebo -->
+<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file $(find baxter_description)/urdf/baxter.urdf -urdf -z 1 -model baxter" />
+```
+
+if it's a `xacro` file, you need to change the `xacro` format to `urdf` format, using the pr2 package
+
+```bash
+sudo apt-get install ros-melodic-pr2-common
+```
+
+```xml
+<!-- Convert an xacro and put on parameter server -->
+<param name="robot_description" command="$(find xacro)/xacro.py $(find pr2_description)/robots/pr2.urdf.xacro" />
+
+<!-- Spawn a robot into Gazebo -->
+<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model pr2" />
+```
+
+### gazebo_ros plugins
 
 在与ROS 通信时，需要加入特定的插件，才能在 ROS 中收到相关信息。[link](http://gazebosim.org/tutorials?tut=ros_gzplugins&cat=connect_ros)
+> 相应的插件源文件在[此处](https://github.com/ros-simulation/gazebo_ros_pkgs)
+
+首先是在 Load 中导入 sdf 文件的参数，并且初始化 node 节点
+
+```c++
+if (!ros::isInitialized())
+  {
+    ROS_FATAL_STREAM_NAMED("planar_move", "PlanarMovePlugin (ns = " << robot_namespace_
+      << "). A ROS node for Gazebo has not been initialized, "
+      << "unable to load plugin. Load the Gazebo system plugin "
+      << "'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+    return;
+  }
+rosnode_.reset(new ros::NodeHandle(robot_namespace_));
+```
+
+设置 Subscriber 与 Publisher
+
+```c++
+ros::SubscribeOptions so =
+  ros::SubscribeOptions::create<geometry_msgs::Twist>(command_topic_, 1,
+      boost::bind(&GazeboRosPlanarMove::cmdVelCallback, this, _1), 
+      ros::VoidPtr(), &queue_);
+\\ topic name, call back funtion, .., buffer queue
+vel_sub_ = rosnode_->subscribe(so);
+```
+
+### camera plugin parameters
 
 针对相机的：
 
@@ -277,7 +474,9 @@ udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中�
             </plugin>
 ```
 
-深度相机的(这个是kinetic 相机的)：
+深度相机的(这个是kinetic 相机的)： 
+
+**注意相机坐标系与世界坐标系的转换关系**
 
 ```xml
 <plugin name="camera_plugin" filename="libgazebo_ros_openni_kinect.so">
@@ -309,3 +508,15 @@ udrf  描述机器人: 多用在ROS 下，需要将其修改才能在 gazbo 中�
 ```
 
 有关雷达注意选择是 GPU 还是 CPU
+
+controllers
+
+```bash
+sudo apt-get install ros-melodic-effort-controllers
+```
+
+yocs nodelet
+
+```bash
+sudo apt-get install ros-melodic-yocs*
+```

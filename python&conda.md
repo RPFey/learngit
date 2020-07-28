@@ -81,3 +81,30 @@ conda 作为环境管理工具
 2. 安装的python 不对（64bit 装了 32bit 的）
 
    conda 可以构建不同的python 环境（对应不同的版本）
+
+## functools
+
+* funtools.partial
+
+functools.partial 可以通过包装的方法，减少函数传递的参数，源代码如下:
+
+```python
+def partial(func, *args, **keywords):
+    def newfunc(*fargs, **fkeywords):
+        newkeywords = keywords.copy()
+        newkeywords.update(fkeywords)
+        return func(*(args + fargs), **newkeywords) #合并，调用原始函数，此时用了partial的参数
+    newfunc.func = func
+    newfunc.args = args
+    newfunc.keywords = keywords
+    return newfunc
+
+# 实际调用时
+def add(a, b):
+    return a + b
+plus3 = partial(add, 4)
+plus5 = partial(add, 5)
+print plus3(2) # 6
+print plus3(7) # 11
+```
+

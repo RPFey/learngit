@@ -1,4 +1,3 @@
-
 <!-- vim-markdown-toc GFM -->
 
 - [变量](#%e5%8f%98%e9%87%8f)
@@ -228,7 +227,7 @@ cross_entropy = -tf.reduce_sum(y_*tf.log(y))
 
 # Module 
 
-slim module :
+## slim
 tf.contrib.slim
 
 ```python
@@ -262,6 +261,51 @@ model.saver.save(sess, os.path.join(save_model_dir, 'checkpoint'), global_step=m
 ```
 
 这些都应该是在 sess 建立好之后。
+
+## Estimator
+
+Estimator 是 tensorflow 高阶封装，封装以下操作: 训练，评估，预测，导出。所有 Estimator 都是基于 [tf.estimator.Estimator](https://www.tensorflow.org/api_docs/python/tf/estimator) 完成。
+
+依赖**预先创建**的 Estimator 需要四个步骤 :
+
+*   编写数据集导入函数。创建两个函数分别导入训练集和测试集，每个数据集导入函数都必须返回两个对象:
+
+1.  字典，键是特征的名称，值是对应的特征数据的张量
+2.  一个包含一个或多个标签的张量。 eg.
+
+```python
+def input_fn(dataset):
+    # manipulate dataset, extracting the feature dict and the label
+    return feature_dict, label
+```
+
+*   定义特征列。 每个 [`tf.feature_column`](https://www.tensorflow.org/api_docs/python/tf/feature_column) 都标识了特征名称、特征类型和任何输入预处理操作。例如，以下代码段创建了三个存储整数或浮点数据的特征列。前两个特征列仅标识了特征的名称和类型。第三个特征列还指定了一个 lambda，该程序将调用此 lambda 来调节原始数据：
+
+```python
+# Define three numeric feature columns.
+population = tf.feature_column.numeric_column('population')
+crime_rate = tf.feature_column.numeric_column('crime_rate')
+median_education = tf.feature_column.numeric_column('median_education',
+                    normalizer_fn=lambda x: x - global_education_mean)
+```
+
+*   实例化相关的预创建的 Estimator。 例如，下面是对名为 `LinearClassifier` 的预创建 Estimator 进行实例化的示例代码：
+
+```python
+# Instantiate an estimator, passing the feature columns.
+estimator = tf.estimator.LinearClassifier(
+    feature_columns=[population, crime_rate, median_education],
+    )
+```
+
+*   调用训练、评估或推理方法。例如，所有 Estimator 都提供训练模型的 `train` 方法。
+
+```python
+# my_training_set is the function created in Step 1
+estimator.train(input_fn=my_training_set, steps=2000)
+```
+
+
 
 # operation
 
@@ -438,9 +482,9 @@ with tf.Session(config=config) as sess:
 GPUOptions :
 
 * pre_process_gpu_memory_fraction : 每块GPU 使用显存上限的百分比。
- 
+
 * visible_device_list : 使用 GPU 的 ID 号
- 
+
 * allow_growth : 分配器将不会指定所有的GPU内存而是根据需求增长，但是由于不会释放内存，所以会导致碎片
 
 ConfigProto : 

@@ -2,7 +2,12 @@
 
 ## rospy
 
-publisher 初始化时， 设置queue_size 为较小整数， None 表示同步通信
+publisher 初始化时， 设置 queue_size 为较小整数， None 表示同步通信
+
+* [ros_numpy](https://github.com/eric-wieser/ros_numpy)
+
+ros 中收发消息机制用的都是 byte， 采用 ros_numpy.numpify 转化为 structured numpy-array
+> a demo is provided under the forlder
 
 ## roscpp
 

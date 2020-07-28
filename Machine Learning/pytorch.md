@@ -116,7 +116,7 @@ def printgrad(self, grad_input, grad_output):
 net.conv2.register_backward_hook(printgrad) 
 ```
 
-训练时，有时会只训练一部分参数（分阶段训练），关于　requires_grad　官方文档
+训练时，有时会只训练一部分参数（分阶段训练），关于 `requires_grad`官方文档
 >If there's a single input to an operation that requires gradient, its output will also require gradient. Conversely, only if all inputs don't require gradient, the output also won't require it.
 
 ```python
@@ -351,7 +351,9 @@ writer.add_embedding(features,
 
 ## nn Module
 
-nn.Parameter : nn.Module 类中有一个方法是 .parameters() (每次给优化器传参时)，会返回包含模型中所有 Parameter 对象的迭代器。
+*   nn.Parameter
+
+nn.Module 类中有一个方法是 .parameters() (每次给优化器传参时)，会返回包含模型中所有 Parameter 对象的迭代器。
 
 ```python
 class Net(nn.Module):
@@ -364,7 +366,98 @@ for param in net.parameters():
     print("param", param)
 ```
 
-named_parameters() 会返回模型中所有　parameters　的名称和参数。有时候用 ModuleDict 或者是属性调用也可以指定操作。
+*   修正梯度
+
+```python
+def clip_grad_norm_(parameters, max_norm, norm_type=2):
+    r"""Clips gradient norm of an iterable of parameters.
+
+    The norm is computed over all gradients together, as if they were
+    concatenated into a single vector. Gradients are modified in-place.
+
+    Arguments:
+        parameters (Iterable[Tensor] or Tensor): an iterable of Tensors or a
+            single Tensor that will have gradients normalized
+        max_norm (float or int): max norm of the gradients
+        norm_type (float or int): type of the used p-norm. Can be ``'inf'`` for
+            infinity norm.
+
+    Returns:
+        Total norm of the parameters (viewed as a single vector).
+    """
+    if isinstance(parameters, torch.Tensor):
+        parameters = [parameters] # change type to list
+    parameters = list(filter(lambda p: p.grad is not None, parameters))
+    max_norm = float(max_norm)
+    norm_type = float(norm_type)
+    if norm_type == inf:
+        total_norm = max(p.grad.data.abs().max() for p in parameters)
+    else:
+        total_norm = 0
+        for p in parameters:
+            param_norm = p.grad.data.norm(norm_type)
+            total_norm += param_norm.item() ** norm_type
+        total_norm = total_norm ** (1. / norm_type)
+    clip_coef = max_norm / (total_norm + 1e-6)
+    if clip_coef < 1:
+        for p in parameters:
+            p.grad.data.mul_(clip_coef)
+    return total_norm
+```
+
+*   迁移学习
+
+```python
+# freeze those parameters
+for param in model.parameters():
+	print(param.requires_grad)
+	param.requires_grad=False
+
+optimizer = optim.SGD(
+    filter(lambda p: p.requires_grad, model.parameters()),
+    lr = 0.001
+)
+```
+
+如果之后想要继续更新某些权重层
+
+```python
+# freeze fc2 layer weight
+net.fc2.weight.requires_grad = False
+net.fc2.bias.requires_grad = False
+
+optimizer = optim.SGD(
+    filter(lambda p: p.requires_grad, net.parameters()),
+    lr = 0.001
+)
+
+# unfreeze those parameters
+net.fc2.weight.requires_grad = True
+net.fc2.bias.requires_grad = True
+
+optimizer.add_param_group({'params': net.fc2.parameters()}) # 但是这是新建了一个 parameter 组
+```
+
+named_parameters() 会返回模型中所有　parameters　的名称 (`bias` 或者 `weight`) 和参数。有时候用 ModuleDict 或者是属性调用也可以指定操作。
+
+*   apply()
+
+给模型中每一部分初始化参数会用到。具体初始化方法可以看 `torch.nn.init`
+
+```python
+class Model(nn.Module):
+    def __init__(self):
+        super(Model,self).__init__()
+        self.lin1 = nn.Linear(3,5)
+
+def init_weight(m):
+    if type(m) == nn.Linear:
+        m.weight.fill_(1.0)
+    elif type(m) == nn.Conv2d:
+    	tirch.nn.init.xavier_uniform_(m.weight)
+model = Model()
+model.apply(init_weight)
+```
 
 ### convolution
 
@@ -412,6 +505,143 @@ FractionalMaxPool2d : paper --> [fractional pooling](http://arxiv.org/abs/1412.6
 
 LPPool : return the norm of the current feature vector.
 
+### dropout 
+
+nn.Dropout 是对输入张量中任意一个元素都有 p 的概率抑制为 0 。 nn.Dropout2d 是将输入中的一个位置处的所有通道全部置 0。
+> 在 model.train() 下 dropout 会置 0; 在 model.eval() 不会
+
+## torch.optim
+
+每个 `optimizer` 中有一个 `param_groups` 维护一组参数更新，其中包含了诸如学习率之类的超参数。通过访问 `pprint(opt.param_group)`可以查看或者修改
+
+```plain
+[
+ {'dampening': 0,
+  'lr': 0.01,
+  'momentum': 0,
+  'nesterov': False,
+  'params': [Parameter containing:
+                tensor([[-0.4239,  0.2810,  0.3866],
+                        [ 0.1081, -0.3685,  0.4922],
+                        [ 0.1043,  0.5353, -0.1368],
+                        [ 0.5171,  0.3946, -0.3541],
+                        [ 0.2255,  0.4731, -0.4114]], requires_grad=True),
+                            Parameter containing:
+                tensor([ 0.3145, -0.5053, -0.1401, -0.1902, -0.5681], requires_grad=True)],
+  'weight_decay': 0},
+ {'dampening': 0,
+  'lr': 0.01,
+  'momentum': 0,
+  'nesterov': False,
+  'params': [Parameter containing:
+                tensor([[[[ 0.0476,  0.2790],
+                        [ 0.0285, -0.1737]],
+
+                        [[-0.0268,  0.2334],
+                        [-0.0095, -0.1972]],
+
+                        [[-0.0309,  0.0752],
+                        [-0.1166, -0.1442]]],
+
+
+                        [[[ 0.2219, -0.1128],
+                        [ 0.1363,  0.0779]],
+
+                        [[-0.1370, -0.0915],
+                        [ 0.0588, -0.0528]],
+
+                        [[ 0.0544,  0.2210],
+                        [ 0.2658, -0.2197]]],
+
+
+                        [[[ 0.0621,  0.2371],
+                        [-0.1248, -0.1972]],
+
+                        [[-0.0829, -0.1541],
+                        [ 0.2709,  0.0952]],
+
+                        [[-0.1588, -0.1018],
+                        [ 0.2712,  0.2416]]]], requires_grad=True),
+                            Parameter containing:
+                tensor([ 0.0690, -0.2328, -0.0965], requires_grad=True)],
+  'weight_decay': 0}
+]
+```
+
+每一组 param_group 有不同的参数，对应模型中不同的 `Parameter`。
+
+* 基本操作
+
+`add_param_group` 用于添加新的参数。
+
+```python
+def add_param_group(self, param_group):
+        """
+        Add a param group to the :class:`Optimizer` s `param_groups`.
+
+        This can be useful when fine tuning a pre-trained network as frozen layers can be made
+        trainable and added to the :class:`Optimizer` as training progresses.
+
+        Arguments:
+            param_group (dict): Specifies what Tensors should be optimized along with group
+            specific optimization options.
+        """
+        assert isinstance(param_group, dict), "param group must be a dict"
+
+        params = param_group['params']
+        if isinstance(params, torch.Tensor):
+            param_group['params'] = [params]
+        elif isinstance(params, set):
+            raise TypeError('optimizer parameters need to be organized in ordered collections, but '
+                            'the ordering of tensors in sets will change between runs. Please use a list instead.')
+        else:
+            param_group['params'] = list(params)
+
+        # 检查传入的 Parameter
+        for param in param_group['params']:
+            if not isinstance(param, torch.Tensor):
+                raise TypeError("optimizer can only optimize Tensors, "
+                                "but one of the params is " + torch.typename(param))
+            if not param.is_leaf:
+                raise ValueError("can't optimize a non-leaf Tensor")
+
+        # 添加默认参数
+        for name, default in self.defaults.items():
+            if default is required and name not in param_group:
+                raise ValueError("parameter group didn't specify a value of required optimization parameter " +
+                                 name)
+            else:
+                param_group.setdefault(name, default)
+
+        # 删除重复的参数
+        param_set = set()
+        for group in self.param_groups:
+            param_set.update(set(group['params']))
+
+        if not param_set.isdisjoint(set(param_group['params'])):
+            raise ValueError("some parameters appear in more than one parameter group")
+
+        self.param_groups.append(param_group)
+```
+
+传入应该是一个字典，类似于 `optim.param_group` 列表中的一个元素，包含了诸如 `params`, `lr` 等参数。
+
+* 自定义操作
+
+继承 `Optimizer` 这个基类，然后更新参数
+
+## functional
+
+### grid_sample
+
+采样用的函数。
+
+```plain
+torch.nn.functional.grid_sample(input, grid, mode='bilinear', padding_mode='zeros', align_corners=None)
+```
+
+`grid` 指明在 `input` 中采样的位置。`grid` $(N, H_{out}, W_{out}, 2)$，`input` $(N, C, H_{in}, W_{in})$ 输出为 $(N, C, H_{out}, W_{out})$。 `grid` 最后的两个维度代表采样的 x, y 坐标。 `grid` 代表 `input` 中归一化后的坐标。 `grid` 中的值都在 `[-1, 1]` 中， `x=-1, y=-1`代表左上角，`x=1, y=1`代表右下角，之外的值代表在图像外，通过 `padding_mode`指定填充方法。`align_corners` 是指在图像角处插值方法。其应该与 `intepolate()` 和 `affine_grid()` 处保持一致。
+
 # STN
 
 STN 本质上是让网络习得一组变换参数。
@@ -432,7 +662,7 @@ convert to torchscript and use cpp to deploy
 
 # 实际编写
 
-比如在计算
+## 距离计算
 
 $$
 |\vec{x_{tar}} - \vec{x_{cur}}|^{2}
@@ -458,3 +688,13 @@ compare = torch.sum(des_tar, 1) - 2*torch.matmul(des_tar, des_cur.t()) + torch.s
 compare = 2 - 2*torch.matmul(des_tar, des_cur.t()) 
 ```
 
+## one-hot
+
+one-hot 编码操作，假定标签是 $\vec{l} = (B,)$
+
+```python
+# label (B, )
+
+base = torch.eye(num_class)
+one_hot = base[label]
+```

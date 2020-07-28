@@ -1,13 +1,22 @@
 
 <!-- vim-markdown-toc GFM -->
 
-* [Sfm](#sfm)
-	* [SIFT (Distinctive Image Features from Scale-Invariant Keypoints)](#sift-distinctive-image-features-from-scale-invariant-keypoints)
-		* [Arch](#arch)
-		* [Argument](#argument)
-		* [补充](#补充)
-	* [SuperPoint](#superpoint)
-		* [Metric](#metric)
+- [Sfm](#sfm)
+  - [SIFT (Distinctive Image Features from Scale-Invariant Keypoints)](#sift-distinctive-image-features-from-scale-invariant-keypoints)
+    - [Arch](#arch)
+    - [Argument](#argument)
+    - [补充](#补充)
+  - [SuperPoint](#superpoint)
+    - [Experiment](#experiment)
+    - [Argument](#argument-1)
+    - [Metric](#metric)
+    - [Implementation](#implementation)
+    - [代码解读](#代码解读)
+  - [UnsuperPoint](#unsuperpoint)
+    - [Loss](#loss)
+    - [Argument](#argument-2)
+  - [R2D2](#r2d2)
+    - [Arch](#arch-1)
 
 <!-- vim-markdown-toc -->
 <font face="DejaVu Sans Mono" size="3">
@@ -203,5 +212,56 @@ recall = tf.reduce_sum(pred * labels) / tf.reduce_sum(labels)
 * base_model.py 
 
 \_gpu_tower : 将数据拆分到不同的 GPU 上。net_output 作为输出。训练时在不同 gpu 上构建计算图，并且提取模型参数和反向传播梯度。
+
+## UnsuperPoint
+
+### Loss
+
+* Uniform Point Distribution 
+
+Trying to push the prediction of the Position XY module to be a uniform distribution. Given a Uniform distribution in a bounded area `[a, b]`,  the Loss is 
+
+$$
+D(U(a,b), V) = \sum_{i=1}^{L} (\frac{v_{i}^{sorted} - a}{b - a} - \frac{i - 1}{L - 1})^{2}
+$$
+
+where $v_{i}^{sorted}$ is the ascendingly sorted values of $\bold{v}$ such that $v_{i}^{sorted} \leq v_{i+1}^{sorted}$.
+
+* Deccorelate descriptor
+
+minimize the correlation between different descriptors.
+
+### Argument
+
+对与 Position XY 查看输出分布。
+
+1. $l_{k}^{score}$ 用 cross entroy 会不会好一些。
+2. image patch size 对网络训练会不会有影响。
+
+## R2D2
+
+### Arch
+
+FCN with 3 outputs:
+
+1. $X \in R^{H x D x W}$ dense descriptor map
+2. heatmap $\bold{S} \in [0,1]^{H x W}$, sparse and repeatable ketpoint locations
+3. reliability map $\bold{R} \in [0,1]^{H x W}$, the estimated discriminativeness
+
+denote $\bold{S}$ and $\bold{S'}$ be the repeatability map for image $I$ and $I'$. $S_{U}'$ is the warped heatmap corresponding to the homography $H$. $S_{U}' = S' \rArr S$
+
+for similarity, we define:
+
+$$
+L_{cosim}(I, I', U) = 1 - \frac{1}{|P|} \sum_{\bold{p} \in P} cosim(S[\bold{p}], S_{U}'[\bold{p}])
+$$
+
+inorder to avoid constant result, we define peaky loss:
+
+$$
+L_{peaky}(I) = 1 - \frac{1}{|P|} \sum_{\bold{p} \in P} (max S_{ij} - mean S_{ij})
+$$
+
+
 
 </font>

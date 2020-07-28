@@ -1,0 +1,6 @@
+{
+    "python.pythonPath": "/home/cag/anaconda3/bin/python",
+    "files.associations": {
+        "*.cu": "c"
+    }
+}

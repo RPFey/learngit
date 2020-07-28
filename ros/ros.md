@@ -378,6 +378,55 @@ c++ 直接 send Transform 发 vector 与 单个都可以
 
 lookupTransform ： 时间戳问题： 填入 ros::Time(0), 表示最近一帧的
 
+## nodelet
+
+* Create a nodelet
+
+Nodelets are specific to ROS nodes desired to run multiple algorithms within the same process in an efficient way, executing each process as threads. These threads can communicate with each other with zero copy transport between two nodes.
+
+a nodelet needs `nodelet` package as dependency
+
+```bash
+catkin_create_pkg nodelet_hello nodelet roscpp rospy
+```
+
+`class_list_macro.h` --> pluginlib API and `nodelet.h` --> nodelets API
+
+an additional nodelet description file is needed as `hello.xml`
+
+```xml
+<library>
+    <class name="nodelet_hello/Hello" type="nodelet_hello::Hello" base_class_type="nodelet::Nodelet">
+    <description>
+        A node to ...
+    </description>
+    </class>
+</library>
+```
+
+export this in `package.xml` file
+
+```xml
+<export>
+    <nodelet plugin="${prefix}/hello.xml"/>
+</export>
+
+<build_depend> nodelet_hello</build_depend>
+<run_depend>nodelet_hello</run_depend>
+```
+
+* Run a nodelet
+
+in launch file
+
+```xml
+<!-- start nodelet manager -->
+<node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
+
+<!-- the first nodelet -->
+<node pkg="nodelet" type="nodelet" name="test" args="load nodelet_hello/Hello standalone_nodelet" output="screen" />
+```
+
 ## pointcloud_to_laserscan ＆ depthimage_to_laserscan
 
 convert pointcloud data to laser scan data
