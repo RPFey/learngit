@@ -646,7 +646,15 @@ def add_param_group(self, param_group):
 torch.nn.functional.grid_sample(input, grid, mode='bilinear', padding_mode='zeros', align_corners=None)
 ```
 
-`grid` 指明在 `input` 中采样的位置。`grid` $(N, H_{out}, W_{out}, 2)$，`input` $(N, C, H_{in}, W_{in})$ 输出为 $(N, C, H_{out}, W_{out})$。 `grid` 最后的两个维度代表采样的 x, y 坐标。 `grid` 代表 `input` 中归一化后的坐标。 `grid` 中的值都在 `[-1, 1]` 中， `x=-1, y=-1`代表左上角，`x=1, y=1`代表右下角，之外的值代表在图像外，通过 `padding_mode`指定填充方法。`align_corners` 是指在图像角处插值方法。其应该与 `intepolate()` 和 `affine_grid()` 处保持一致。
+`grid` 指明在 `input` 中采样的位置。`grid` $(N, H_{out}, W_{out}, 2)$，`input` $(N, C, H_{in}, W_{in})$ 输出为 $(N, C, H_{out}, W_{out})$。 `grid` 最后的一个维度代表采样的 x, y 坐标。 `grid` 代表 `input` 中归一化后的坐标。 `grid` 中的值都在 `[-1, 1]` 中， `x=-1, y=-1`代表左上角，`x=1, y=1`代表右下角，之外的值代表在图像外，通过 `padding_mode`指定填充方法。`align_corners` 是指在图像角处插值方法。其应该与 `intepolate()` 和 `affine_grid()` 处保持一致。
+
+## torchvision
+
+源代码在 [here](https://github.com/pytorch/vision/tree/master/torchvision)
+
+* ops
+
+box.py 中定义了与 iou, nms 相关的操作。
 
 # STN
 

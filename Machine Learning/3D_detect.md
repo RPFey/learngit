@@ -27,24 +27,27 @@
     - [Argument](#argument-3)
     - [Implementation](#implementation)
   - [Learning Depth-Guided Convolutions for Monocular 3D Object Detection](#learning-depth-guided-convolutions-for-monocular-3d-object-detection)
-  - [PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation](#pvn3d-a-deep-point-wise-3d-keypoint-voting-network-for-6dof-pose-estimation)
     - [Intro](#intro-5)
     - [Arch](#arch-3)
+    - [Argument](#argument-4)
+  - [PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation](#pvn3d-a-deep-point-wise-3d-keypoint-voting-network-for-6dof-pose-estimation)
+    - [Intro](#intro-6)
+    - [Arch](#arch-4)
     - [Implementation](#implementation-1)
     - [Arguments](#arguments-1)
   - [Real-time Fruit recognition and Grasp Estimation for Autonomous Apple Harvestnig](#real-time-fruit-recognition-and-grasp-estimation-for-autonomous-apple-harvestnig)
     - [Summary](#summary)
-    - [Arch](#arch-4)
+    - [Arch](#arch-5)
   - [Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection](#contrast-prior-and-fluid-pyramid-integration-for-rgbd-salient-object-detection)
-    - [Intro](#intro-6)
+    - [Intro](#intro-7)
     - [Architeture](#architeture)
     - [Experiments and Dataset](#experiments-and-dataset)
     - [arguments](#arguments-2)
   - [Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network](#dense-3d-point-cloud-reconstruction-using-a-deep-pyramid-network)
-    - [Intro](#intro-7)
-    - [Arch](#arch-5)
-  - [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
     - [Intro](#intro-8)
+    - [Arch](#arch-6)
+  - [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
+    - [Intro](#intro-9)
 
 <!-- vim-markdown-toc -->
 
@@ -382,6 +385,47 @@ Corner Loss : 直接计算8点距离作为角度的误差
 model_util.py 中有对 bin 的参数设置和解算。
 
 ## Learning Depth-Guided Convolutions for Monocular 3D Object Detection
+
+### Intro
+
+Two alternatives of LiDAR data 
+
+| name | approach | drawbacks | paper |
+| :-: | :-: | :-: | :-: |
+| image-based approach | these approaches leverage geometry constraints including object shape, ground plane, and key points. These constraints are formulated as terms in loss function. | 1. perspective projection may cause significant scale changes in object scale, due the distance of objects. <br/> 2. 2D convolution defined on image plane loses the depth information.  | [5, 17] |
+| pseudo-LiDAR point-based | transform depth maps estimated from 2D images to point cloud to mimic LiDAR signal. | 1. performance relies on the precision of estimated depth maps. <br/> 2. Point Cloud loses sematic information. | [48, 33, 50] |
+
+Summary:
+
+Conv kernels are generated from depth map and applied to each pixel and channel.
+
+### Arch
+
+DLCN : depth-wise local convolution network. This requires a feature volume of local filters **the same size as the input feature maps**. Use shift and element-wise product operator to speed up the operation.
+
+Define: grid ${(g_{i}, g_{j})}$ where $g\in(int)[1-k/2, k/2-1]$. $D^{(g_{i}, g_{j})}$ is the feature map after shift $(g_{i}, g_{j})$.
+
+$$
+I' = I * \frac{1}{k*k} \sum_{g_{i}, g_{j}} D^{(g_{i}, g_{j})}
+$$
+
+shift-pooling operator (to encourage information flow between channels of the depth-wise convolution):
+
+<img src=../img/CVpaper/shift_pooling.png />
+
+Adaptive dilation rate.
+
+Use $I_{3}$ to generate d weights $A^{w}(I), w \in (int)[1, d]$. The final channel-wise convolution is 
+
+$$
+I' = \frac{1}{d*k*k} I \otimes \sum_{w} A^{w}(I) \sum_{g_{i}, g_{j}} D^{(g_{i}*w, g_{j}*w)}
+$$
+
+> 相当于是扩大了移动的范围 $(g_{i}, g_{j})$ --> $(w*g_{i}, w*g_{j})$. 并对不同的加权。
+
+### Argument
+
+Maybe we can use Depth map captured from RGBD camera as guidance for conv kernels.
 
 ## PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation
 

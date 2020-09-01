@@ -247,3 +247,41 @@ if __name__ == '__main__':
     # train
     main(args)
 ```
+
+## 源代码&文档
+
+关于 Optimizer 和 Scheduler 可以查看[此处](https://github.com/PyTorchLightning/pytorch-lightning/blob/0a092f66836912a714804c5103f03c7929ebf774/docs/source/optimizers.rst)更详细的文档。一般的示例如下
+
+```plain
+ # no LR scheduler
+def configure_optimizers(self):
+    return Adam(...)
+
+# Adam + LR scheduler
+def configure_optimizers(self):
+    optimizer = Adam(...)
+    scheduler = ReduceLROnPlateau(optimizer, ...)
+    return [optimizer], [scheduler]
+
+# Two optimizers each with a scheduler
+def configure_optimizers(self):
+    optimizer1 = Adam(...)
+    optimizer2 = SGD(...)
+    scheduler1 = ReduceLROnPlateau(optimizer1, ...)
+    scheduler2 = LambdaLR(optimizer2, ...)
+    return [optimizer1, optimizer2], [scheduler1, scheduler2]
+
+# Same as above with additional params passed to the first scheduler
+def configure_optimizers(self):
+    optimizers = [Adam(...), SGD(...)]
+    schedulers = [
+        {
+        'scheduler': ReduceLROnPlateau(optimizers[0], ...),
+        'monitor': 'val_recall', # Default: val_loss
+        'interval': 'epoch',
+        'frequency': 1
+        },
+        LambdaLR(optimizers[1], ...)
+    ]
+    return optimizers, schedulers
+```

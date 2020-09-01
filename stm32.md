@@ -86,6 +86,10 @@ openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg -c init -c "reset halt
 
 > 2020.5.30 晚上一直不清楚 stlink-v2 通过 openocd 无法连接芯片的原因。后来发现是 Boot 接线不对，导致驱动检测不到芯片。
 
+若从主闪存启动，从地址 0x0800 0000 访问，这也就是通过 openocd 烧写指定的地址。
+
+内置 SRAM 是在 0x2000 0000
+
 ## communication
 
 ### UART
