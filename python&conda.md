@@ -2,12 +2,14 @@
 <!-- vim-markdown-toc GFM -->
 
 - [python](#python)
+  - [built-in function](#built-in-function)
   - [Multiprocessing](#multiprocessing)
   - [安装包](#安装包)
   - [Argparse](#argparse)
   - [Base Tools](#base-tools)
     - [Dict](#dict)
   - [conda](#conda)
+  - [functools](#functools)
 
 <!-- vim-markdown-toc -->
 
@@ -18,6 +20,16 @@ python可以直接加版本号在终端中运行相应的python 版本 ： eg. p
 python -m pip 使用pip 工具
 
 当在根目录下时 ， 可以用 pyhton -m pip install --usr 来安装在当前用户下
+
+## built-in function
+
+* eval()
+
+执行一段字符串表达式。
+
+```python
+eval('3*2') # output 6
+```
 
 ## Multiprocessing
 

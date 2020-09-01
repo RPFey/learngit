@@ -20,21 +20,22 @@
     - [Argument](#argument-1)
   - [PointNet++](#pointnet)
     - [Intro](#intro-3)
+    - [Arch](#arch-2)
     - [Argument](#argument-2)
   - [Frustum PointNets](#frustum-pointnets)
     - [Intro](#intro-4)
-    - [Arch](#arch-2)
+    - [Arch](#arch-3)
     - [Argument](#argument-3)
     - [Implementation](#implementation)
   - [Learning Depth-Guided Convolutions for Monocular 3D Object Detection](#learning-depth-guided-convolutions-for-monocular-3d-object-detection)
   - [PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation](#pvn3d-a-deep-point-wise-3d-keypoint-voting-network-for-6dof-pose-estimation)
     - [Intro](#intro-5)
-    - [Arch](#arch-3)
+    - [Arch](#arch-4)
     - [Implementation](#implementation-1)
     - [Arguments](#arguments-1)
   - [Real-time Fruit recognition and Grasp Estimation for Autonomous Apple Harvestnig](#real-time-fruit-recognition-and-grasp-estimation-for-autonomous-apple-harvestnig)
     - [Summary](#summary)
-    - [Arch](#arch-4)
+    - [Arch](#arch-5)
   - [Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection](#contrast-prior-and-fluid-pyramid-integration-for-rgbd-salient-object-detection)
     - [Intro](#intro-6)
     - [Architeture](#architeture)
@@ -42,7 +43,7 @@
     - [arguments](#arguments-2)
   - [Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network](#dense-3d-point-cloud-reconstruction-using-a-deep-pyramid-network)
     - [Intro](#intro-7)
-    - [Arch](#arch-5)
+    - [Arch](#arch-6)
   - [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
     - [Intro](#intro-8)
 
@@ -292,7 +293,7 @@ Point Net 与 Voxel Net 采取两种方式解决点云问题。前者是基于�
 
 ### Intro
 
-The drawback of PointNet is that it doesn't capture the local structure of the  distance metric.
+The drawback of PointNet is that it doesn't capture the local structure of the distance metric.
 
 Overview and Framework:
 
@@ -303,6 +304,32 @@ Overview and Framework:
 For local features, PointNet++ uses PointNet recursively on the partitions of the input sets.
 
 For partition generation, each partition is defined as a neighborhood ball in the underlying Euclidean space. Considering that the input point datasets are unevenly distributed among the space, we use large neighborhood to include more points inside.(which is counter to CNNs)
+
+### Arch
+
+PointNet wants to learn a function $f$, that
+
+$$
+f(x_{1}, x_{2}, ..., x_{n}) = \gamma (\mathop{MAX}\limits_{i=1,...,n} \{ h(x_{i}) \})
+$$
+
+While PointNet uses a single max pooling operation to aggregate the whole point set, our new architecture builds a **hierarchical grouping of points** and progressively **abstract larger and larger local regions**. The hierarchical Point set feature learning is constructed by multiple **set abstraction layers** which consist of the following three stacks:
+
+* Sampling Layer. Given a point set ${x_{1}, x_{2}, ..., x_{n}}$, we sample farthest points ${x_{i_{1}}, x_{i_{2}}, ..., x_{i_{m}}}$, such that the $x_{i_{j}}$ is the farthest point from ${x_{i_{1}}, x_{i_{2}}, ..., x_{i_{j-1}}}$. This has better coverage of the entire point set.
+
+* Grouping Layer. Given a point set N * (d + C) and coordinates of a set of centroids of size N' * d, we group the points relative to these centroids and return a N' * K * (d + C)
+
+> Grouping strategy can use Ball Query or KNN. The former one can guarantee a fixed region scale.
+
+* PointNet. N' * K * (d + C) --> N' * (d + C')
+
+In order to generalize the model from **dense** dataset to **sparse** input, MSG and MRG is adopted.
+
+* MSG. concatenate features learned from different input scales (number of points). This is done by randomly drop out input points.
+
+* MRG. concatenate features learned from different resolutions (from the subsampled point set and the original point set).
+
+**Feature Propagation Module** We propagate point features from $N_{l} * (d + C)$ points to $N_{l-1}$ points. ($N_{l}$ and $N_{l-1}$ are point size of output and input in set abstraction module.) Interpolation is used to propagate feature values of $N_{l}$ points to $N_{l-1}$ points. The interpolated features of $N_{l-1}$ points are then concatenated from the set abstraction level. Then, they are passed through a channel-wise convolution layer.
 
 ### Argument
 

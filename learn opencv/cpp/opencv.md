@@ -507,11 +507,9 @@ adaptivemethod 没有指明阈值是多少,且要求必须为THRESH_BINARY / THR
 
 在《学习opencv3 》中演示了adaptiveThreshold 函数，在图像有阴影时，后者比前者能提取更完整的图像。
 
-```
+```plain
 normalize()
 ```
-
-
 
 ## 图像金字塔
 
@@ -552,6 +550,34 @@ HoughLinesP(src, lines, rho, theta, threshold, minLineLength = 0, maxLineGap = 0
 hough circle transform 对噪声比较敏感， 先用中值滤波。
 
 对于圆，由于 x,y,theta 可以表示一个圆，变换后的圆空间就是3维。（可以用于弧线的检测）
+
+## 几何变换
+
+对于图像在平面区域，有两种变换：
+
+1. 仿射变换：基于 2*3 矩阵变换
+2. 透视变换，单应性映射：基于 3*3 矩阵变换
+
+仿射变换，给定 2*3 的变换矩阵。变换矩阵由三对对应点对构造。
+
+```c++
+// 稠密变换的函数是
+void warpAffine( 	
+    InputArray  src,
+    OutputArray  dst,
+    InputArray  M,
+    Size  dsize,
+    int  flags = INTER_LINEAR,
+    int  borderMode = BORDER_CONSTANT,
+    const Scalar &  borderValue = Scalar() 
+)
+
+// 获取变换矩阵
+cv::Mat 
+```
+
+透视变换则是由四对对应点对构成
+
 
 # 相机标定
 
