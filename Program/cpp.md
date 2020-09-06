@@ -1,50 +1,16 @@
-# vector
-
-## copy
-
-```c++
-vector<int> list;
-// 1. initialization
-vector<int> copy_(list);
-// 2. assgin (copy)
-copy_.assign(list.begin(),list.end());
-// 3. swap, the original one is empty
-copy_.swap(list);
-// 4. insert, insert the original one into the new vector
-copy_.insert(copy_.end(), list.begin(), list.end());
-// the first argument can change to decide where to insert
-```
-
-# Boost
-
-## boost::array
-
-```c++
-// 与　ros 消息转化
-boost::array<double,9> intrinc {msg->K}; // K 是float64[9]
-// 与　mat 转化
-cv::Mat temp_intri(3,3,CV_64FC1, &intrinc[0]);
-```
-
-## boost::shared_ptr
-
-智能指针管理，如果多个shared_ptr 共同管理一个对象时，只有所有指针全部脱离(引用计数清零)，对象才会被释放。
-
-```c++
-boost::shared_ptr<int> ps(1);
-// .unique
-ps.unique(); // 判断是否仅有一个指针指向所指对象
-// .use_count
-boost::shared_ptr<int> ps1 = ps;
-ps.use_count(); // return 2 (2 pointers to the same object)
-// .reset()
-boost:;shared_ptr<int> p2(3);
-p2.reset(p1); // 释放当前对象，并指向 p1
-```
-
-## boost::bind
-
 # C++
+
+## 编译相关
+
+### 动态库
+
+编译时，需要在 `.o` 文件后加上 `-fPIC` 选项。生成时，加上 `-shared -o libname.so`。
+
+连接时，`-lname -L.` 连接。
+
+`LD_LIBRARY_PATH` 动态链接库路径。程序运行时，会在该变量路径下寻找连接的动态链接库，需要更新。
+
+> TensorRT 官方代码可以直接用动态链接库方式迁移到 ROS 工程下
 
 ## 关键字
 
