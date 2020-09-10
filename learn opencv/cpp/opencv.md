@@ -106,11 +106,15 @@ if(src.empty())
 }
 
 // 3. 类初始化
-Mat src(2,2,CV_8UC3,Scalar(0,0,255)); // 8UC3 就规定了是3通道的
+Mat src(2, 2, CV_8UC3, Scalar(0,0,255)); // 8UC3 就规定了是3通道的
 // 创建图像并复值 ， Scalar 类用于赋值。
 // 有些里面会有 Size 类， 也是直接实例化即可
 //定义小数组
-Mat kernel = (Mat_<float>(3,3)<<0,-1,0,-1,5,-1,0,-1,0);
+Mat kernel = (Mat_<float>(3,3)<<0, -1, 0, -1, 5, -1, 0, -1, 0);
+
+// 指针初始化
+cv::Mat img = cv::Mat(input.getHeight(), input.getWidth(), cv_type, input.getPtr<sl::uchar1>(MEM::CPU));
+// 直接将指针指向数据存储地址，避免拷贝。但是应注意共享内存带来的后果。
 ```
 
 ## Mat结构
@@ -140,11 +144,7 @@ mat_flags
 
 16-31代表magic signature，暂理解为用来区分Mat的类型，如果Mat和SparseMat
 
-更细致的分析推荐这篇文章flags
-
-作者：callback 
-来源：CSDN 
-原文：https://blog.csdn.net/u010248552/article/details/79962132 
+更细致的分析推荐这篇[文章](https://blog.csdn.net/u010248552/article/details/79962132) 
 
 ### dims
 
@@ -224,8 +224,6 @@ image(j,i) = 100;
 # 图像变换
 
 ## gamma 矫正
-
-
 
 ## 图像混合
 

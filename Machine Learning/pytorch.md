@@ -582,52 +582,52 @@ nn.Dropout 是对输入张量中任意一个元素都有 p 的概率抑制为 0 
 
 ```python
 def add_param_group(self, param_group):
-        """
-        Add a param group to the :class:`Optimizer` s `param_groups`.
+    """
+    Add a param group to the :class:`Optimizer` s `param_groups`.
 
-        This can be useful when fine tuning a pre-trained network as frozen layers can be made
-        trainable and added to the :class:`Optimizer` as training progresses.
+    This can be useful when fine tuning a pre-trained network as frozen layers can be made
+    trainable and added to the :class:`Optimizer` as training progresses.
 
-        Arguments:
-            param_group (dict): Specifies what Tensors should be optimized along with group
-            specific optimization options.
-        """
-        assert isinstance(param_group, dict), "param group must be a dict"
+    Arguments:
+        param_group (dict): Specifies what Tensors should be optimized along with group
+        specific optimization options.
+    """
+    assert isinstance(param_group, dict), "param group must be a dict"
 
-        params = param_group['params']
-        if isinstance(params, torch.Tensor):
-            param_group['params'] = [params]
-        elif isinstance(params, set):
-            raise TypeError('optimizer parameters need to be organized in ordered collections, but '
-                            'the ordering of tensors in sets will change between runs. Please use a list instead.')
+    params = param_group['params']
+    if isinstance(params, torch.Tensor):
+        param_group['params'] = [params]
+    elif isinstance(params, set):
+        raise TypeError('optimizer parameters need to be organized in ordered collections, but '
+                        'the ordering of tensors in sets will change between runs. Please use a list instead.')
+    else:
+        param_group['params'] = list(params)
+
+    # 检查传入的 Parameter
+    for param in param_group['params']:
+        if not isinstance(param, torch.Tensor):
+            raise TypeError("optimizer can only optimize Tensors, "
+                            "but one of the params is " + torch.typename(param))
+        if not param.is_leaf:
+            raise ValueError("can't optimize a non-leaf Tensor")
+
+    # 添加默认参数
+    for name, default in self.defaults.items():
+        if default is required and name not in param_group:
+            raise ValueError("parameter group didn't specify a value of required optimization parameter " +
+                                name)
         else:
-            param_group['params'] = list(params)
+            param_group.setdefault(name, default)
 
-        # 检查传入的 Parameter
-        for param in param_group['params']:
-            if not isinstance(param, torch.Tensor):
-                raise TypeError("optimizer can only optimize Tensors, "
-                                "but one of the params is " + torch.typename(param))
-            if not param.is_leaf:
-                raise ValueError("can't optimize a non-leaf Tensor")
+    # 删除重复的参数
+    param_set = set()
+    for group in self.param_groups:
+        param_set.update(set(group['params']))
 
-        # 添加默认参数
-        for name, default in self.defaults.items():
-            if default is required and name not in param_group:
-                raise ValueError("parameter group didn't specify a value of required optimization parameter " +
-                                 name)
-            else:
-                param_group.setdefault(name, default)
+    if not param_set.isdisjoint(set(param_group['params'])):
+        raise ValueError("some parameters appear in more than one parameter group")
 
-        # 删除重复的参数
-        param_set = set()
-        for group in self.param_groups:
-            param_set.update(set(group['params']))
-
-        if not param_set.isdisjoint(set(param_group['params'])):
-            raise ValueError("some parameters appear in more than one parameter group")
-
-        self.param_groups.append(param_group)
+    self.param_groups.append(param_group)
 ```
 
 传入应该是一个字典，类似于 `optim.param_group` 列表中的一个元素，包含了诸如 `params`, `lr` 等参数。
@@ -635,6 +635,62 @@ def add_param_group(self, param_group):
 * 自定义操作
 
 继承 `Optimizer` 这个基类，然后更新参数
+
+### lr_scheduler
+
+`lr_scheduler` 在恢复训练时若有如下错误
+
+```plain
+KeyError: "param 'initial_lr' is not specified in param_groups[0] when resuming an optimizer"
+```
+
+通过源代码可看出，在初始化 `lr_scheduler` 时，会在 `param_group` 中添加 `initial_lr` 作为初始学习率，计算后面的学习率。
+
+```python
+class _LRScheduler(object):
+
+    def __init__(self, optimizer, last_epoch=-1):
+
+        # Attach optimizer
+        if not isinstance(optimizer, Optimizer):
+            raise TypeError('{} is not an Optimizer'.format(
+                type(optimizer).__name__))
+        self.optimizer = optimizer
+
+        # Initialize epoch and base learning rates
+        if last_epoch == -1:
+            for group in optimizer.param_groups:
+                group.setdefault('initial_lr', group['lr'])
+        else:
+            for i, group in enumerate(optimizer.param_groups):
+                if 'initial_lr' not in group:
+                    raise KeyError("param 'initial_lr' is not specified "
+                                   "in param_groups[{}] when resuming an optimizer".format(i))
+        self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
+        self.last_epoch = last_epoch
+```
+
+`self.base_lr` 存储了各个参数组的初始学习率，在不同的 `lr_scheduler` 中，采用不同的函数计算下一步的学习率。
+
+```python
+def get_lr(self):
+    if not self._get_lr_called_within_step:
+        warnings.warn("To get the last learning rate computed by the scheduler, "
+                        "please use `get_last_lr()`.")
+
+    return [base_lr * lmbda(self.last_epoch)
+            for lmbda, base_lr in zip(self.lr_lambdas, self.base_lrs)]
+```
+
+所以解决问题就在于在 `optimizer.param_groups` (dict) 中添加 `initial_lr` 或者在保存模型的时候保存 `optimizer.state_dict`
+
+```python
+chkpt = {'epoch': epoch,
+        'best_fitness': best_fitness,
+        'training_results': f.read(),
+        'model': model.module.state_dict() if hasattr(model, 'module') else model.state_dict(),
+        'optimizer': None if final_epoch else optimizer.state_dict()}
+```
 
 ## functional
 

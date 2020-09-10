@@ -86,9 +86,13 @@ network->getNbInputs() // get the number of input tensors
 network->getInput(0) // get the Input tensor class ITensor
 ```
 
+`IBuilderConfig` 可以选择不同的优化算法。
+
 ### Inference
 
-前推需要把数据拷贝到 cuda 上，然后执行网络，再拷贝回 Host 上。与 CUDA 编程类似。
+前推需要把数据拷贝到 cuda 上，然后执行网络，再拷贝回 Host 上，与 CUDA 编程类似。
+
+例程中，采用 `.executeV2()` 运行，传入的是输入输出对应的指针。在 mEngine 中输入输出向量都有相对应的 BindingIndex 和 Name 。这些由函数 `getBindingIndex`, `getBindingName` 互相转化。`.executeV2()` 传入参数是 `void**` , 在示例中是 `vector<void*>` 头元素的地址。`vector` 中按照 mEngine `Tensor` 的索引顺序存储相对应的向量（或者数据）的首地址。
 
 ## C++ API
 
