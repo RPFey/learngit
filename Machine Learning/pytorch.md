@@ -1,3 +1,5 @@
+[TOC]
+
 # RNN
 
 对信息的理解可以分为时域， x(t), x(t+1), ... ; 或者空域(图片), I(row), I(row+1), ...
@@ -65,13 +67,43 @@ for step in range(100):
 
 decoder 涉及到 反卷积之类的操作
 
-# Auto-grad
+# [Auto-grad](https://pytorch.org/docs/stable/notes/autograd.html)
+
+Internally, autograd represents this graph as a graph of `Function` objects, which can be `apply()` to compute the result of evaluating the graph. The `.grad_fn` attribute of each `torch.Tensor` is the entry point into this graph.
+
+## Concurrency Training on CPU
+
+The gradient can be non-deterministic here!
+
+```python
+# Define a train function to be used in different threads
+def train_fn():
+    x = torch.ones(5, 5, requires_grad=True)
+    # forward
+    y = (x + 3) * (x + 4) * 0.5
+    # backward
+    y.sum().backward()
+    # potential optimizer update
+
+
+# User write their own threading code to drive the train_fn
+threads = []
+for _ in range(10):
+    p = threading.Thread(target=train_fn, args=())
+    p.start()
+    threads.append(p)
+
+for p in threads:
+    p.join()
+```
 
 尽量减少对矩阵的直接赋值(其实赋值的话根本没办法算梯度)，最好是生成一个常数矩阵，与原矩阵做加减乘除运算达到目的(比如筛选); pytorch 反向传播支持赋值操作。
 
 optimizer 的 zero_grad 只需要运行一次即可
 
-自定义操作：
+[自定义操作](https://pytorch.org/docs/stable/notes/extending.html#extending-torch-autograd)，详情参考官方 API `torch.autograd.Function` 与 `torch.autograd.function._ContextMethodMixin` (ctx)
+
+Example 1 : Binarized Input and Use our own difined backward.
 
 ```python
 class BinarizedF(Function):
@@ -100,9 +132,79 @@ class Binarized(torch.nn.Module):
         return BinarizedF.apply(input_)
 ```
 
-自定义处理层，实现backward 处理。 从auto_grad 中继承 Function 实现 forward & backward
+Example 2 : Custom Linear Layer
 
-再继承 nn.Module， 实现 forward, 就与一般的神经网络层一致了
+```python
+# Inherit from Function
+class LinearFunction(Function):
+
+    # Note that both forward and backward are @staticmethods
+    @staticmethod
+    # bias is an optional argument
+    def forward(ctx, input, weight, bias=None):
+        ctx.save_for_backward(input, weight, bias)
+        output = input.mm(weight.t())
+        if bias is not None:
+            output += bias.unsqueeze(0).expand_as(output)
+        return output
+
+    # This function has only a single output, so it gets only one gradient
+    @staticmethod
+    def backward(ctx, grad_output):
+        # This is a pattern that is very convenient - at the top of backward
+        # unpack saved_tensors and initialize all gradients w.r.t. inputs to
+        # None. Thanks to the fact that additional trailing Nones are
+        # ignored, the return statement is simple even when the function has
+        # optional inputs.
+        input, weight, bias = ctx.saved_tensors
+        grad_input = grad_weight = grad_bias = None
+
+        # These needs_input_grad checks are optional and there only to
+        # improve efficiency. If you want to make your code simpler, you can
+        # skip them. Returning gradients for inputs that don't require it is
+        # not an error.
+        if ctx.needs_input_grad[0]:
+            grad_input = grad_output.mm(weight)
+        if ctx.needs_input_grad[1]:
+            grad_weight = grad_output.t().mm(input)
+        if bias is not None and ctx.needs_input_grad[2]:
+            grad_bias = grad_output.sum(0)
+
+        # 这里应该就对应到相关 Tensor 的 .grad 属性中
+        return grad_input, grad_weight, grad_bias
+
+class Linear(nn.Module):
+    def __init__(self, input_features, output_features, bias=True):
+        super(Linear, self).__init__()
+        self.input_features = input_features
+        self.output_features = output_features
+
+        # nn.Parameter is a special kind of Tensor, that will get
+        # automatically registered as Module's parameter once it's assigned
+        # as an attribute. Parameters and buffers need to be registered, or
+        # they won't appear in .parameters() (doesn't apply to buffers), and
+        # won't be converted when e.g. .cuda() is called. You can use
+        # .register_buffer() to register buffers.
+        # nn.Parameters require gradients by default.
+        self.weight = nn.Parameter(torch.Tensor(output_features, input_features))
+        if bias:
+            self.bias = nn.Parameter(torch.Tensor(output_features))
+        else:
+            # You should always register all possible parameters, but the
+            # optional ones can be None if you want.
+            self.register_parameter('bias', None)
+
+        # Not a very smart way to initialize weights
+        self.weight.data.uniform_(-0.1, 0.1)
+        if self.bias is not None:
+            self.bias.data.uniform_(-0.1, 0.1)
+
+    def forward(self, input):
+        # See the autograd section for explanation of what happens here.
+        return LinearFunction.apply(input, self.weight, self.bias)
+```
+
+自定义处理层，实现backward 处理。 从auto_grad 中继承 Function 实现 forward & backward。再继承 nn.Module，实现 forward，就与一般的神经网络层一致了。
 
 在各层中监控输入输出　（hook 机制）
 
@@ -122,8 +224,12 @@ def printgrad(self, grad_input, grad_output):
 net.conv2.register_backward_hook(printgrad) 
 ```
 
+## Transfer Learning & Fine-tuning
+
 训练时，有时会只训练一部分参数（分阶段训练），关于 `requires_grad`官方文档
 >If there's a single input to an operation that requires gradient, its output will also require gradient. Conversely, only if all inputs don't require gradient, the output also won't require it.
+
+Pay attention to how to freeze paramters inside a network. Only add the parameters to be updated into the optimizer.
 
 ```python
 model = torchvision.models.resnet18(pretrained=True)
@@ -132,6 +238,20 @@ for param in model.parameters():
 model.fc = nn.Linear(512,100)
 # optimize only the classifier
 optimizer = optim.SGD(model.fc.parameters(), lr=0.02)
+```
+
+## Batch Accumulation
+
+Pytorch backward 之后，各个 Tensor 的梯度存在 `.grad` 中。当反复构建计算图并且反向传播之后，各个梯度是累加的。所以可以直接经过几个 batch 反向传播后，再用 Optimizer 优化。
+
+```python
+def zero_grad(self):
+    r"""Clears the gradients of all optimized :class:`torch.Tensor` s."""
+    for group in self.param_groups:
+        for p in group['params']:
+            if p.grad is not None:
+                p.grad.detach_()
+                p.grad.zero_()
 ```
 
 # Multi-GPU 
@@ -655,6 +775,10 @@ torch.nn.functional.grid_sample(input, grid, mode='bilinear', padding_mode='zero
 * ops
 
 box.py 中定义了与 iou, nms 相关的操作。
+
+## CUDA EXTENSION
+
+pytorch 自己封装了一个 Extension 模块，添加了与 CUDA, Pytorch 相关的头文件与链接库路径。查看源代码确定自己环境和连接路径是否配置正确。
 
 # STN
 

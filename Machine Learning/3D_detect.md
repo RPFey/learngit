@@ -1,60 +1,44 @@
 
-<!-- vim-markdown-toc GFM -->
-
-- [3D Vision](#3d-vision)
-  - [VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection](#voxelnet-end-to-end-learning-for-point-cloud-based-3d-object-dectection)
-    - [Intro](#intro)
-    - [Architecture](#architecture)
-    - [Experiment](#experiment)
-    - [Arguments](#arguments)
-  - [Part-A2](#part-a2)
-    - [Intro](#intro-1)
-      - [related work](#related-work)
-    - [Arch](#arch)
-    - [Argument](#argument)
-    - [Code](#code)
-  - [PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation](#pointnet-deep-learning-on-point-sets-for-3d-classification-and-segmentation)
-    - [intro](#intro-2)
-    - [Arch](#arch-1)
-    - [Experiment](#experiment-1)
-    - [Argument](#argument-1)
-  - [PointNet++](#pointnet)
-    - [Intro](#intro-3)
-    - [Argument](#argument-2)
-  - [Frustum PointNets](#frustum-pointnets)
-    - [Intro](#intro-4)
-    - [Arch](#arch-2)
-    - [Argument](#argument-3)
-    - [Implementation](#implementation)
-  - [Learning Depth-Guided Convolutions for Monocular 3D Object Detection](#learning-depth-guided-convolutions-for-monocular-3d-object-detection)
-    - [Intro](#intro-5)
-    - [Arch](#arch-3)
-    - [Argument](#argument-4)
-  - [PVN3D: A deep Point-wise 3D keypoint voting Network for 6Dof Pose Estimation](#pvn3d-a-deep-point-wise-3d-keypoint-voting-network-for-6dof-pose-estimation)
-    - [Intro](#intro-6)
-    - [Arch](#arch-4)
-    - [Implementation](#implementation-1)
-    - [Arguments](#arguments-1)
-  - [Real-time Fruit recognition and Grasp Estimation for Autonomous Apple Harvestnig](#real-time-fruit-recognition-and-grasp-estimation-for-autonomous-apple-harvestnig)
-    - [Summary](#summary)
-    - [Arch](#arch-5)
-  - [Contrast Prior and Fluid Pyramid Integration for RGBD Salient Object Detection](#contrast-prior-and-fluid-pyramid-integration-for-rgbd-salient-object-detection)
-    - [Intro](#intro-7)
-    - [Architeture](#architeture)
-    - [Experiments and Dataset](#experiments-and-dataset)
-    - [arguments](#arguments-2)
-  - [Dense 3D Point Cloud Reconstruction Using a Deep Pyramid Network](#dense-3d-point-cloud-reconstruction-using-a-deep-pyramid-network)
-    - [Intro](#intro-8)
-    - [Arch](#arch-6)
-  - [3D point cloud registration for localization using a deep nueral network auto-encoder](#3d-point-cloud-registration-for-localization-using-a-deep-nueral-network-auto-encoder)
-    - [Intro](#intro-9)
-
-<!-- vim-markdown-toc -->
+[TOC]
 
 # 3D Vision
 
-## VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection
+## Youtube Class
 
+Predicting 3D shape from RGB images.
+
+Depth Map Prediction from a Single Image Using a Multi-Scale Deep Network. --> Scale Invariant Loss (For Depth ambuity)
+
+3D-R2N2: A unified Approach for single and multiple-iew **3D Object Reconstruction**.
+
+Voxel-Tube representation : efficient method to reduce the computation costs of 3D convolution.
+
+* Voxel Grid representation
+
+Octree Genrating Networks : Efficient Convolutional Architectures for High-resolution 3D outputs. 八叉树地图
+
+Occupancy Networks : Learning 3D Reconstruction in Function Space. 
+
+* Point Cloud representation
+
+*A Point set generation netowrk for 3D Object Reconstruction from a single image*. We need function to compare pointclouds as **sets**. 
+
+**Chamfer distance**: sum of the L2 distance to each point's nearst neoghbor (order doesn't matter) in the other set.
+
+> Point Cloud doesn't represent the surface of the shape : extracting a mesh for rendering or other applications requires post-processing.
+
+* Mesh representation
+
+Pixel2Mesh : Generating 3D Mesh Models from Single RGB Images
+
+Deform the initial mesh and trying to refine it to approximte the final mesh. 
+
+(Graph convolution)
+
+3D detection.
+
+## VoxelNet: End-to-End Learning for Point Cloud Based 3D Object Dectection
+ 
 ### Intro
 
 Hand-crafted features are [39,7,8,19,40,33,6,25,1,34,2]; directly predict the 3D bounding box from 2D images [4,3,42,43,44,36]; d
