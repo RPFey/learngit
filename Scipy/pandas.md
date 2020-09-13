@@ -67,4 +67,12 @@ dataset['Age'].fillna(dataset['Age'].median(), inplace=True)
 
 * index 
 
-感觉和 numpy.ndarray 差不多。二维数组索引。只不过除了用数字外，可以用字符串索引（对应行列的 index ）
+感觉和 numpy.ndarray 差不多。二维数组索引。只不过除了用数字外，可以用字符串索引（对应行列的 index）
+
+## Documentation
+
+### I/O operation
+
+* read_csv()
+
+其中有一个参数`seq`作为分割符，将输入`.csv`文件拆分为列表。

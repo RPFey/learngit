@@ -292,7 +292,6 @@ int main (int argc, char *argv[]){
 driver 的 CMakeLists
 
 ```cmake
-
 px4_add_module(
         MODULE drivers__led    # drivers__[name]
         MAIN led  # 入口函数 [name]__main

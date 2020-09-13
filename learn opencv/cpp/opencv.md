@@ -106,11 +106,15 @@ if(src.empty())
 }
 
 // 3. 类初始化
-Mat src(2,2,CV_8UC3,Scalar(0,0,255)); // 8UC3 就规定了是3通道的
+Mat src(2, 2, CV_8UC3, Scalar(0,0,255)); // 8UC3 就规定了是3通道的
 // 创建图像并复值 ， Scalar 类用于赋值。
 // 有些里面会有 Size 类， 也是直接实例化即可
 //定义小数组
-Mat kernel = (Mat_<float>(3,3)<<0,-1,0,-1,5,-1,0,-1,0);
+Mat kernel = (Mat_<float>(3,3)<<0, -1, 0, -1, 5, -1, 0, -1, 0);
+
+// 指针初始化
+cv::Mat img = cv::Mat(input.getHeight(), input.getWidth(), cv_type, input.getPtr<sl::uchar1>(MEM::CPU));
+// 直接将指针指向数据存储地址，避免拷贝。但是应注意共享内存带来的后果。
 ```
 
 ## Mat结构
@@ -140,11 +144,7 @@ mat_flags
 
 16-31代表magic signature，暂理解为用来区分Mat的类型，如果Mat和SparseMat
 
-更细致的分析推荐这篇文章flags
-
-作者：callback 
-来源：CSDN 
-原文：https://blog.csdn.net/u010248552/article/details/79962132 
+更细致的分析推荐这篇[文章](https://blog.csdn.net/u010248552/article/details/79962132) 
 
 ### dims
 
@@ -224,8 +224,6 @@ image(j,i) = 100;
 # 图像变换
 
 ## gamma 矫正
-
-
 
 ## 图像混合
 
@@ -507,11 +505,9 @@ adaptivemethod 没有指明阈值是多少,且要求必须为THRESH_BINARY / THR
 
 在《学习opencv3 》中演示了adaptiveThreshold 函数，在图像有阴影时，后者比前者能提取更完整的图像。
 
-```
+```plain
 normalize()
 ```
-
-
 
 ## 图像金字塔
 
@@ -552,6 +548,34 @@ HoughLinesP(src, lines, rho, theta, threshold, minLineLength = 0, maxLineGap = 0
 hough circle transform 对噪声比较敏感， 先用中值滤波。
 
 对于圆，由于 x,y,theta 可以表示一个圆，变换后的圆空间就是3维。（可以用于弧线的检测）
+
+## 几何变换
+
+对于图像在平面区域，有两种变换：
+
+1. 仿射变换：基于 2*3 矩阵变换
+2. 透视变换，单应性映射：基于 3*3 矩阵变换
+
+仿射变换，给定 2*3 的变换矩阵。变换矩阵由三对对应点对构造。
+
+```c++
+// 稠密变换的函数是
+void warpAffine( 	
+    InputArray  src,
+    OutputArray  dst,
+    InputArray  M,
+    Size  dsize,
+    int  flags = INTER_LINEAR,
+    int  borderMode = BORDER_CONSTANT,
+    const Scalar &  borderValue = Scalar() 
+)
+
+// 获取变换矩阵
+cv::Mat 
+```
+
+透视变换则是由四对对应点对构成
+
 
 # 相机标定
 
