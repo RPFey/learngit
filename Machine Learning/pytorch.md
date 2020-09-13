@@ -411,19 +411,21 @@ def clip_grad_norm_(parameters, max_norm, norm_type=2):
     return total_norm
 ```
 
-*   迁移学习
+*   迁移学习(transfer learning)
 
 ```python
 # freeze those parameters
 for param in model.parameters():
 	print(param.requires_grad)
-	param.requires_grad=False
+	param.requires_grad_(False)
 
 optimizer = optim.SGD(
     filter(lambda p: p.requires_grad, model.parameters()),
     lr = 0.001
 )
 ```
+
+> 这里也可以添加全部参数，因为 requires_grad 设置为 False 后，对应的 `.grad` 为 None， `step()` 不会更新这些参数。
 
 如果之后想要继续更新某些权重层
 
@@ -492,8 +494,151 @@ nn.Conv2d 特性：
 1. dilation: control the space between kernel points (sparse convolve and link)
 2. group : the group convolution !
 
-nn.ConvTranspose2d : deconvolution
+### nn.ConvTranspose2d
+
+deconvolution
+
 $$ H_{out} = (H_{in} - 1)*stride - 2*padding + dilation[0]*(kernel[0] - 1) + padding[0] + 1$$
+
+### BatchNorm2d
+
+```python
+class _NormBase(Module):
+    """Common base of _InstanceNorm and _BatchNorm"""
+    _version = 2
+    __constants__ = ['track_running_stats', 'momentum', 'eps',
+                     'num_features', 'affine']
+    num_features: int
+    eps: float
+    momentum: float
+    affine: bool
+    track_running_stats: bool
+    # WARNING: weight and bias purposely not defined here.
+    # See https://github.com/pytorch/pytorch/issues/39670
+
+    def __init__(
+        self,
+        num_features: int,
+        eps: float = 1e-5,
+        momentum: float = 0.1,
+        affine: bool = True,
+        track_running_stats: bool = True
+    ) -> None:
+        super(_NormBase, self).__init__()
+        self.num_features = num_features
+        self.eps = eps
+        self.momentum = momentum
+        self.affine = affine
+        self.track_running_stats = track_running_stats
+        if self.affine:
+            self.weight = Parameter(torch.Tensor(num_features))
+            self.bias = Parameter(torch.Tensor(num_features))
+        else:
+            self.register_parameter('weight', None)
+            self.register_parameter('bias', None)
+        if self.track_running_stats:
+            self.register_buffer('running_mean', torch.zeros(num_features))
+            self.register_buffer('running_var', torch.ones(num_features))
+            self.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))
+        else:
+            self.register_parameter('running_mean', None)
+            self.register_parameter('running_var', None)
+            self.register_parameter('num_batches_tracked', None)
+        self.reset_parameters()
+```
+
+初始化了 `self.weight` 与 `self.bias` 作为 BN 层中的 $\gamma$ 与 $\beta$。同时记录运行时`running_mean`, `running_var`, `num_batches_tracked` 作为测试阶段的 $\mu$ 和 $\sigma$
+
+```python
+    def reset_running_stats(self) -> None:
+        if self.track_running_stats:
+            self.running_mean.zero_()
+            self.running_var.fill_(1)
+            self.num_batches_tracked.zero_()
+
+    def reset_parameters(self) -> None:
+        self.reset_running_stats()
+        if self.affine:
+            init.ones_(self.weight)
+            init.zeros_(self.bias)
+```
+
+参数初始化。
+
+```python
+    def _check_input_dim(self, input):
+        raise NotImplementedError
+
+    def extra_repr(self):
+        return '{num_features}, eps={eps}, momentum={momentum}, affine={affine}, ' \
+               'track_running_stats={track_running_stats}'.format(**self.__dict__)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        version = local_metadata.get('version', None)
+
+        if (version is None or version < 2) and self.track_running_stats:
+            # at version 2: added num_batches_tracked buffer
+            #               this should have a default value of 0
+            num_batches_tracked_key = prefix + 'num_batches_tracked'
+            if num_batches_tracked_key not in state_dict:
+                state_dict[num_batches_tracked_key] = torch.tensor(0, dtype=torch.long)
+
+        super(_NormBase, self)._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict,
+            missing_keys, unexpected_keys, error_msgs)
+
+
+class _BatchNorm(_NormBase):
+
+    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True,
+                 track_running_stats=True):
+        super(_BatchNorm, self).__init__(
+            num_features, eps, momentum, affine, track_running_stats)
+
+    def forward(self, input: Tensor) -> Tensor:
+        self._check_input_dim(input)
+
+        # exponential_average_factor is set to self.momentum
+        # (when it is available) only so that it gets updated
+        # in ONNX graph when this node is exported to ONNX.
+        if self.momentum is None:
+            exponential_average_factor = 0.0
+        else:
+            exponential_average_factor = self.momentum
+
+        if self.training and self.track_running_stats:
+            # TODO: if statement only here to tell the jit to skip emitting this when it is None
+            if self.num_batches_tracked is not None:
+                self.num_batches_tracked = self.num_batches_tracked + 1
+                if self.momentum is None:  # use cumulative moving average
+                    exponential_average_factor = 1.0 / float(self.num_batches_tracked)
+                else:  # use exponential moving average
+                    exponential_average_factor = self.momentum
+
+        """
+        Decide whether the mini-batch stats should be used for normalization rather than the buffers.
+        Mini-batch stats are used in training mode, and in eval mode when buffers are None.
+        """
+        if self.training:
+            bn_training = True
+        else:
+            bn_training = (self.running_mean is None) and (self.running_var is None)
+
+        """
+        Buffers are only updated if they are to be tracked and we are in training mode. Thus they only need to be
+        passed when the update should occur (i.e. in training mode when they are tracked), or when buffer stats are
+        used for normalization (i.e. in eval mode when buffers are not None).
+        """
+        return F.batch_norm(
+            input,
+            # If buffers are not to be tracked, ensure that they won't be updated
+            self.running_mean if not self.training or self.track_running_stats else None,
+            self.running_var if not self.training or self.track_running_stats else None,
+            self.weight, self.bias, bn_training, exponential_average_factor, self.eps)
+```
+
+`forward` 时，传入`self.running_mean`, `self.running_var` 作为记录。
 
 nn.Unfold (unfold the block size) : 相当于是将一个block 中的所有展平。
 

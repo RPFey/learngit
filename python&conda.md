@@ -1,17 +1,5 @@
 
-<!-- vim-markdown-toc GFM -->
-
-- [python](#python)
-  - [built-in function](#built-in-function)
-  - [Multiprocessing](#multiprocessing)
-  - [安装包](#安装包)
-  - [Argparse](#argparse)
-  - [Base Tools](#base-tools)
-    - [Dict](#dict)
-  - [conda](#conda)
-  - [functools](#functools)
-
-<!-- vim-markdown-toc -->
+[TOC]
 
 # python
 
@@ -30,6 +18,56 @@ python -m pip 使用pip 工具
 ```python
 eval('3*2') # output 6
 ```
+
+* __dict__
+
+```python
+class Parent(object):
+    a = 0
+    b = 1
+
+    def __init__(self):
+        self.a = 2
+        self.b = 3
+
+    def p_test(self):
+        pass
+
+
+class Child(Parent):
+    a = 4
+    b = 5
+
+    def __init__(self):
+        super(Child, self).__init__()
+        # self.a = 6
+        # self.b = 7
+
+    def c_test(self):
+        pass
+
+    def p_test(self):
+        pass
+
+p = Parent()
+c = Child()
+print Parent.__dict__
+print Child.__dict__
+print p.__dict__
+print c.__dict__
+```
+
+output 
+
+
+```plain
+{'a': 0, '__module__': '__main__', 'b': 1, '__dict__': <attribute '__dict__' of 'Parent' objects>, 'p_test': <function p_test at 0x0000000002325BA8>, '__weakref__': <attribute '__weakref__' of 'Parent' objects>, '__doc__': None, '__init__': <function __init__ at 0x0000000002325B38>}
+{'a': 4, 'c_test': <function c_test at 0x0000000002325C88>, '__module__': '__main__', 'b': 5, 'p_test': <function p_test at 0x0000000002325CF8>, '__doc__': None, '__init__': <function __init__ at 0x0000000002325C18>}
+{'a': 2, 'b': 3}
+{'a': 2, 'b': 3}
+```
+
+对于类，会返回有所属性和方法的字典。对于对象，只返回属性和对应值。
 
 ## Multiprocessing
 
@@ -143,11 +181,13 @@ parent 通过继承的方法，避免重复定义参数。
 
 It works much like `parse_args()` except that it does not produce an error when extra arguments are present. Instead, it returns a two item tuple containing the `populated namespace` and the list of `remaining argument strings`.
 
-## Base Tools
+## Base Structure
 
 ### Dict
 
-`.get(key, default=None)`
+`.get(key, default=None)` 不存在键值就返回 None
+
+`.setdefault(key, value)`
 
 ## conda
 
