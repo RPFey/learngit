@@ -1,3 +1,5 @@
+[TOC]
+
 # TensorRT
 
 ## Installation
@@ -24,7 +26,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<TensorRT-${version}/lib>
 需要创建 `ILogger` 的对象或派生对象。官方文档给出示例：
 
 ```c++
-class Logger : public ILogger           
+class Logger : public ILogger
  {
      void log(Severity severity, const char* msg) override
      {
@@ -50,7 +52,7 @@ auto builder = SampleUniquePtr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(
 Dynamic shape support requires that the `kEXPLICIT_BATCH` flag is set. With dynamic shapes, any of the input dimensions can vary at run-time, and there are no implicit dimensions in the network specification. We shift the bits to set the corresponding flag.
 
 ```c++
-const auto explicitBatch = 1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);     
+const auto explicitBatch = 1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
 auto network = SampleUniquePtr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(explicitBatch));
 ```
 
@@ -70,7 +72,29 @@ for (int i = 0; i < parser.getNbErrors(); ++i)
 {
     std::cout << parser->getError(i)->desc() << std::endl;
 }
+```
 
+#### 自定义网络结构
+
+```c++
+// 用 Ibuilder 创建网络
+INetworkDefinition* network = builder->createNetworkV2(0U);
+
+// 1. 定义输入
+ITensor* data = network->addInput(INPUT_BLOB_NAME, dt, Dims3{3, INPUT_H, INPUT_W});
+
+// 2. 一个典型的卷积，BN，激活层
+Weights emptywts{DataType::kFLOAT, nullptr, 0};
+// 最后的参数对应的是 kernel 和 bias 的权重, 后面有对 Weights 类的说明
+IConvolutionLayer* conv1 = network->addConvolutionNd(*data, 32, DimsHW{3, 3}, KernelWeights, emptywts);
+// 设置 stride 和 padding
+conv1->setStrideNd(DimsHW{s, s});
+conv1->setPaddingNd(DimsHW{p, p});
+
+// BN 实际用的是 `addScale`, 对输入做了线性变换
+// 注意输入是从上一层获取 Output，实际是一个 ITensor
+IScaleLayer* bn1 = addBatchNorm2d(network, weightMap, *conv1->getOutput(0), "module_list." + std::to_string(linx) + ".BatchNorm2d", 1e-5);
+// Activation 用的是 `addActivation`，参数用类中的方法设置。
 ```
 
 * Build the engine
@@ -96,6 +120,22 @@ network->getInput(0) // get the Input tensor class ITensor
 
 ## C++ API
 
-ITensor
+### ITensor
 
+### Dims
 
+Dims 是一个基类，由此派生出了一系列和维数有关的类。一般在定义张量大小的时候传入。
+
+### Weights
+
+```c++
+//! by \p values field should be preserved until the build is complete.
+
+class Weights
+{
+public:
+    DataType type;      //!< The type of the weights.
+    const void* values; //!< The weight values, in a contiguous array.
+    int64_t count;      //!< The number of weights in the array.
+};
+```
