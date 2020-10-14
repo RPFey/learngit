@@ -2,11 +2,11 @@
 
 [official tutorials](https://cmake.org/cmake/help/latest/guide/tutorial/index.html)
 
-对于源码编译的库 
+对于源码编译的库
 
 cmake -D [parameters] ..
 
-make -j 
+make -j
 
 make install 是把.h 文件写入/usr/lib/local 下
 
@@ -60,4 +60,13 @@ The same goes for linker FLAGS
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 # or use
 string(APPEND CMAKE_CXX_FLAGS " -Wall -Werror")
+```
+
+## 路径配置
+
+```cmake
+# 头文件路径
+include_directories()
+# 库文件路径
+link_directories()
 ```

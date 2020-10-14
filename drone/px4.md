@@ -1,43 +1,4 @@
-
-<!-- vim-markdown-toc GFM -->
-
-- [PX4](#px4)
-  - [Build (make)](#build-make)
-  - [仿真](#仿真)
-    - [先编译后仿真](#先编译后仿真)
-  - [书写规则](#书写规则)
-  - [hardware](#hardware)
-    - [S-BUS](#s-bus)
-    - [PWM&PPM](#pwmppm)
-    - [sensor](#sensor)
-  - [启动脚本分析](#启动脚本分析)
-  - [Mixer (混合控制)](#mixer-混合控制)
-  - [构架](#构架)
-    - [文件构架](#文件构架)
-  - [concept](#concept)
-  - [drivers(hardware)](#drivershardware)
-    - [Fundamentals](#fundamentals)
-    - [optical flow](#optical-flow)
-  - [drivers(software) / Modules](#driverssoftware--modules)
-    - [GPS](#gps)
-    - [EKF2](#ekf2)
-  - [application](#application)
-    - [multi-thread](#multi-thread)
-    - [work_queue](#work_queue)
-    - [commander](#commander)
-    - [navigation](#navigation)
-      - [数据准备](#数据准备)
-    - [PID_control](#pid_control)
-    - [bootloader](#bootloader)
-    - [topic](#topic)
-    - [CMakeLists.txt](#cmakeliststxt)
-  - [ROS](#ros)
-  - [Mavlink](#mavlink)
-  - [uORB](#uorb)
-- [多线程](#多线程)
-  - [控制](#控制)
-
-<!-- vim-markdown-toc -->
+[TOC]
 
 # PX4
 

@@ -74,7 +74,24 @@ for (int i = 0; i < parser.getNbErrors(); ++i)
 }
 ```
 
+* Build the engine
+
+```c++
+builder->setMaxBatchSize(maxBatchSize); // batch inference
+IBuilderConfig* config = builder->createBuilderConfig();
+config->setMaxWorkspaceSize(1 << 20);
+ICudaEngine* engine = builder->buildEngineWithConfig(*network, *config);
+
+//check the input and output dimensions
+network->getNbInputs() // get the number of input tensors
+network->getInput(0) // get the Input tensor class ITensor
+```
+
+`IBuilderConfig` 可以选择不同的优化算法。
+
 #### 自定义网络结构
+
+* Typical Layer
 
 ```c++
 // 用 Ibuilder 创建网络
@@ -97,20 +114,50 @@ IScaleLayer* bn1 = addBatchNorm2d(network, weightMap, *conv1->getOutput(0), "mod
 // Activation 用的是 `addActivation`，参数用类中的方法设置。
 ```
 
-* Build the engine
+* Plugin
+
+`IPluginCreator` 用来构建 Plugin. 需要提供插件的名字，版本， field parameters. eg.
 
 ```c++
-builder->setMaxBatchSize(maxBatchSize); // batch inference
-IBuilderConfig* config = builder->createBuilderConfig();
-config->setMaxWorkspaceSize(1 << 20);
-ICudaEngine* engine = builder->buildEngineWithConfig(*network, *config);
+const char* YoloPluginCreator::getPluginName() const
+{
+        return "YoloLayer_TRT";
+}
 
-//check the input and output dimensions
-network->getNbInputs() // get the number of input tensors
-network->getInput(0) // get the Input tensor class ITensor
+const char* YoloPluginCreator::getPluginVersion() const
+{
+        return "1";
+}
+
+const PluginFieldCollection* YoloPluginCreator::getFieldNames()
+{
+        return &mFC;
+}
+
+// 注册插件，这里有点类似 Gazebo
+REGISTER_TENSORRT_PLUGIN(YoloPluginCreator);
 ```
 
-`IBuilderConfig` 可以选择不同的优化算法。
+运行时，注册过的插件可以通过如下语句调用
+
+```c++
+// 对应 PluginCreator 返回的名字和版本号
+//Use the extern function getPluginRegistry to access the global TensorRT Plugin Registry
+auto creator = getPluginRegistry()->getPluginCreator(pluginName, pluginVersion);
+const PluginFieldCollection* pluginFC = creator->getFieldNames();
+//populate the field parameters (say layerFields) for the plugin layer
+PluginFieldCollection *pluginData = parseAndFillFields(pluginFC, layerFields);
+//create the plugin object using the layerName and the plugin meta data
+IPluginV2 *pluginObj = creator->createPlugin(layerName, pluginData);
+//add the plugin to the TensorRT network using the network API
+auto layer = network.addPluginV2(&inputs[0], int(inputs.size()), pluginObj);
+```
+
+插件需要继承 `IPluginV2IOExt`, `IPluginV2DynamicExt` 类（有点类似 `nn.Module`）
+
+* enqueue 
+
+类似于 `forward`, 前推函数。
 
 ### Inference
 
