@@ -36,6 +36,16 @@ After we get the model function $f$, the intensity parameter $\sigma_{r}$ for co
 
 exsiting methods in 3D reconstruction. [6,7] Point cloud construction [8]. Quality analysis [9]. Capture and project the texture [10]. Compared to camera images, laser beam provide more details of the surface of the objects.[12] Texture mapping to recover the texture. [13]
 
+### Binocular Fusion
+
+采用窗口的想法，比较窗口中灰度值的相似度。
+
+问题，透视会影响。eg .
+
+![](../img/digital_img/foreshortening.jpeg)
+
+
+
 ## OpenCV
 
 ### triangulatePoints
