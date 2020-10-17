@@ -24,7 +24,9 @@
 
 * attribute
 
-\__attribute__((visibility('default'))):
+```c++
+__attribute__((visibility('default')));
+```
 
 控制共享库 (.so) 输出符号。'default' 代表其可以被导出。'hidden' 则不行。
 
@@ -55,6 +57,12 @@ static_cast 比 c-type cast 更加严格。比如将 `char *` 转换为 `int *` 
 > 这是由于前者是 1 字节，后者是 4 字节，将会有 3 个字节是未定义的。
 
 static_cast 防止派生类指针转换为**私有的**基类指针。向 `void*` 或由 `void*` 转换时，最好用 static_cast。
+
+## 函数
+
+### 默认赋值
+
+在 (.h) 文件中函数声明使用缺省值，在 (.cpp) 文件函数定义中不需要使用。
 
 ## 指针
 
@@ -110,6 +118,71 @@ class Child : public Base ;
 // 调用基类的构造函数并可以传入参数
 Child::Child() : Base() {
 
+}
+```
+
+### Inheritance and Dynamic Memory Allocation
+
+When the base class uses dynamic memory allocation,
+
+* if the derived class doesn't use dynamic memry allocation
+ 
+you don't need to explicitly define those constructor & destructor.
+
+for destructor, it calls the base-class destructor after executing its own code.
+
+for copy constructor, memberwise copying uses the form of copying that is defined for the data type in question. (that is defined uniquely in the derived class.) Copying a class member or an inherited class component is done using the copy construtor. **It is same for assignment**.
+
+* if the derived class uses dynamic memry allocation
+
+As the derived class destructor automatically calls the base-class destrcutor, it just needs to clean up the allocated memory of the derived class. Base-class destructor will clean up after what the derived-class constructor do.
+
+```c++
+class baseDMA {};
+class hasDMA : public baseDMA{};
+
+// destructor
+baseDMA::~baseDMA{
+    delete []label;
+}
+hasDMA::~hasDMA{
+    delete []style;
+}
+
+// copy constructor
+baseDMA::baseDMA(const baseDMA& rs){
+    label = new char[std::strlen(rs.label) + 1];
+    std::strcpy(label, rs.label);
+    rating = rs.rating;
+}
+
+// base 的引用可以指向 derived
+hasDMA::hasDMA(const hasDMA& hs)
+    : baseDMA(hs)
+{
+    style = new char[std::strlen(hs.style) + 1];
+    std::strcpy(style, hs.style);
+}
+
+// assignment
+baseDMA & baseDMA::operator= (const baseDMA & rs){
+    if (this == &rs)
+        return *this;
+    delete []label;
+    label = new[std::strlen(rs.label) + 1];
+    std::strcpy(label, rs.label);
+    rating = rs.rating;
+    return *this;
+}  
+
+hasDMA & hasDMA::operator= (const hasDMA & rs){
+    if( this == &rs)
+        return *this;
+    baseDMA::operator=(hs);  // use the `operator=` explicit call
+    delete [] style;
+    style = new char[std::strlen(hs.style) + 1];
+    std::strcpy(style, hs.style);
+    return *this;
 }
 ```
 

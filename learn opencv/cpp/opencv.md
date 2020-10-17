@@ -10,13 +10,13 @@ opencv 包含一些老式的函数，对于参数类型有要求，尽量不要�
 
 cmake 中 变量赋值时中间不要有空格
 
-```
--D OPENCV_EXTRA_MODULES_PATH=/opencv/...  .. 
+```bash
+-D OPENCV_EXTRA_MODULES_PATH=/opencv/...  ..
 ```
 
 opencv_contrib 搭建 ：
 
-报错 ： 找不到文件与目录 
+报错 ： 找不到文件与目录
 
 在 /usr/local/include 下面修改 因为opencv4 的 hpp 文件在 opencv4/opencv2/ 下 只 
 
@@ -26,11 +26,11 @@ opencv_contrib 搭建 ：
 
 当然找不到， 把里面的 opencv2 复制到 /usr/local/include 下
 
-报错 ： 未定义的类 
+报错 ： 未定义的类
 
 这是连接库的问题， 先采用 pkg-config opencv --cflags --libs 查看连接库
 
-```
+```bash
 apt-file search opencv.pc
 ```
 
@@ -40,7 +40,7 @@ apt-file search opencv.pc
 
 没有 构建 nonfree 的函数， 要在 cmake 中重新 configure
 
-```
+```bash
 cmake -D CMAKE_INSTALL_PREFIX=/usr/local -D CMAKE_BUILD_TYPE=Release -D OPENCV_ENABLE_NONFREE:BOOL=ON -D OPENCV_EXTRA_MODULES_PATH=/opencv/opencv_contrib-master/modules ..
 ```
 
@@ -101,8 +101,6 @@ saturate_cast<...>(...);
 
 laplace 算子：计算二阶导数。 api: Laplacian(....)
 
-
-
 采用 canny 函数
 
 canny 之前 会自带 Gaussian Blur
@@ -117,7 +115,7 @@ findContour(InputOutputArray image, OutputArrayofArrays contours, OutputArray hi
 
 输入的图像一般是经过canny 边缘检测的二值图像。
 
-contours 是 
+contours 是
 
 ```c++
 vector<vector<Point>>

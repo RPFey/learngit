@@ -456,8 +456,6 @@ $$ L_{least_square} = \sum_{j=1}^{M}|| kp_{j} - (R*kp_{j}' + t)||^{2} $$
 
 ### Implementation
 
-
-
 ### Arguments
 
 这里也写些和论文写作相关的。看了这么多论文，也能察觉出一些基本的写作套路。

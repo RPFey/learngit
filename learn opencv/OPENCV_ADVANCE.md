@@ -24,6 +24,16 @@ qrcode 检测的核心模块在 `QRDetect` 类中。
 
 至此，三个角的标定框全部检测完成。后面是固定标定框的顺序(fixationPoints)，缩放以及计算大小以滤除过小的方框。
 
+从 `QRCodeDetector::detect` 中发现:
+
+```c++
+if (!qrdet.localization()) { return false; }
+if (!qrdet.computeTransformationPoints()) { return false; }
+vector<Point2f> pnts2f = qrdet.getTransformationPoints();
+```
+
+输出四个点经过调整，顺序为 `左上，右上，左下，右下`
+
 ## FEATURE EXTRACTION AND MATCHING
 
 使用 sift 特征

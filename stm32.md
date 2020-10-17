@@ -54,13 +54,21 @@ ST - link
 
 ### 烧写
 
-* openocd 
+* openocd
 
 参见 nuttx 中 openocd 安装与烧写方法
 
 ```bash
 openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg -c init -c "reset halt" -c "flash write_image erase nuttx.bin 0x08000000"
 ```
+
+openocd 也可以用来和芯片相连接，提供调试的本地端口。
+
+```bash
+openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg
+```
+
+openocd 配置文件在 `/usr/local/share/openocd/scripts` 下。`interface` 对应的是调试器硬件 (stlink-v2, ...) `target` 对应是板子
 
 * stlink
 
@@ -74,13 +82,13 @@ openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg -c init -c "reset halt
 | 1 | 0 | 从系统存储器启动 (System memory) |
 | 1 | 1 | 从内嵌SRAM 启动 (Embedded SRAM) |
 
-* User Flas memory
+* User Flag memory
 
 正常工作模式
 
 * System Memory
 
-系统存储器是芯片内部一块特定的区域， ST 在出厂时，在内部预置了一段 bootloader, (ROM)。　在 bootloader 帮助下，通过串口下载程序到 flash 中。
+系统存储器是芯片内部一块特定的区域， ST 在出厂时，在内部预置了一段 bootloader, (ROM)。在 bootloader 帮助下，通过串口下载程序到 flash 中。
 
 * Embedded SRAM
 
@@ -91,6 +99,23 @@ openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg -c init -c "reset halt
 若从主闪存启动，从地址 0x0800 0000 访问，这也就是通过 openocd 烧写指定的地址。
 
 内置 SRAM 是在 0x2000 0000
+
+### Debug
+
+目前调试可以用 openocd 完成。注意在启动文件中修改烧写文件区域的大小。
+
+```bash
+arm-none-eabi-gdb nuttx # program name
+
+# gdb interface
+target remote localhost:3333 # connect to the localhost port provided by openocd
+monitor reset # reset chip
+monitor halt  # halt the program
+
+load nuttx    # load binary file
+```
+
+`monitor` 是本地远程发送到芯片的命令。
 
 ## communication
 
@@ -125,10 +150,6 @@ MODER (mode register)
 OTYPER (output type register)
 
 ## IDE
-
-### Coox
-
-the repo(libs) follows a git format, and you may search the whole folder to find the file (if missing !)
 
 ## Program
 
