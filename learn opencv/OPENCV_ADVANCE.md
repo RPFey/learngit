@@ -32,7 +32,24 @@ if (!qrdet.computeTransformationPoints()) { return false; }
 vector<Point2f> pnts2f = qrdet.getTransformationPoints();
 ```
 
-输出四个点经过调整，顺序为 `左上，右上，左下，右下`
+输出四个点经过调整，顺序为 `左上，右上，左下，右下`。
+
+## [Arucon Markers](https://docs.opencv.org/master/d5/dae/tutorial_aruco_detection.html)
+
+Aruco is a kind of ￼binary square fiducial markers. Each corner is identified unequivocally for detection of the original pose.
+
+* Marker creation 
+
+Use the predefined dictionary to generate markers with a given id.
+
+* Marker detection
+
+```python
+
+inpuImage.copyTo(outputImage)
+
+
+```
 
 ## FEATURE EXTRACTION AND MATCHING
 

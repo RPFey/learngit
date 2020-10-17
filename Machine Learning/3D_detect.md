@@ -367,6 +367,12 @@ Corner Loss : 直接计算8点距离作为角度的误差
 
 model_util.py 中有对 bin 的参数设置和解算。
 
+## deep hough voting for 3D object detection in point clouds
+
+### argument
+
+Simply increasing the receptive field does not solve the problem because as the network captures larger context, it also causes more inclusion of nearby objects and clutter.
+
 ## Learning Depth-Guided Convolutions for Monocular 3D Object Detection
 
 ### Intro

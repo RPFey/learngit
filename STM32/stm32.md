@@ -155,7 +155,7 @@ OTYPER (output type register)
 
 stmf4xx.h has defines about registers
 
-```C++
+```c++
 RCC -> AHBENR |= RCC_AHBENR_GPIOCEN ; // or (1 << 19) specify the bits
 
 // set zero
@@ -179,20 +179,7 @@ __asm ("ADD %[result], %[input_x], %[input_y]"
 格式为
 
 ```c
-__asm [volatile] ( code_template
-    : output_operand_list
-    [: input_operand_list
-    [: clobbered_register_list] ]
-)
-```
-
-一般是一行命令对应为一行 __asm
-
-# RTOS
-
-## NUTTX
-
-\> System Type > STM32 Peripheral Support 中确定使用的外设
+stem Type > STM32 Peripheral Support 中确定使用的外设
 
 \> System Type > Alternate Pin Mapping 中确定重映射关系
 
