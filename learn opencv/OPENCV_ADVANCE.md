@@ -34,21 +34,28 @@ vector<Point2f> pnts2f = qrdet.getTransformationPoints();
 
 输出四个点经过调整，顺序为 `左上，右上，左下，右下`。
 
-## [Arucon Markers](https://docs.opencv.org/master/d5/dae/tutorial_aruco_detection.html)
+## [Aruco Markers](https://docs.opencv.org/master/d5/dae/tutorial_aruco_detection.html)
 
 Aruco is a kind of ￼binary square fiducial markers. Each corner is identified unequivocally for detection of the original pose.
 
-* Marker creation 
+* Marker creation
 
 Use the predefined dictionary to generate markers with a given id.
 
 * Marker detection
 
+在函数 `_findMarkerContours()` 中检测预先的标定框，筛选过程如下:
+> \* 代表需要关注修改
+
+1. `adaptivethreshold` 二值化。
+2. `findContours` 寻找凸多边形。
+3. 设定 `minPerimeterPixels` 与 `maxPerimeterPixels`，寻找 contours 点数在这之间的。
+4. `approxPolyDP` 近似凸多边形。寻找矩形 （*），且用 `isContourConvex` 寻找凸多边形。
+5. `minCornerDistanceRate` 筛选各顶点之间的距离。(\*, 注意小物体设置)
+6. `minDistanceToBorder` 忽略靠近图像边界的侯选框。
+
 ```python
-
 inpuImage.copyTo(outputImage)
-
-
 ```
 
 ## FEATURE EXTRACTION AND MATCHING

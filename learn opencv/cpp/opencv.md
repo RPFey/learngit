@@ -113,13 +113,9 @@ canny 之前 会自带 Gaussian Blur
 findContour(InputOutputArray image, OutputArrayofArrays contours, OutputArray hierarchy,int mode, int method, Point offset = Point())
 ```
 
-输入的图像一般是经过canny 边缘检测的二值图像。
+输入的图像一般是经过 canny 边缘检测的二值图像。( adaptiveThreshold 阈值化 )
 
-contours 是
-
-```c++
-vector<vector<Point>>
-```
+contours 是 `vector<vector<Point>>`
 
 每一组Point 点集就是一条轮廓。
 
@@ -128,6 +124,7 @@ vector<vector<Point>>
 hierarchy
 
 ```c++
+vector<vector<Point>> contours
 vector<Vec4i> hierarchy
 ```
 

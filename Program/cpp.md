@@ -58,6 +58,21 @@ static_cast 比 c-type cast 更加严格。比如将 `char *` 转换为 `int *` 
 
 static_cast 防止派生类指针转换为**私有的**基类指针。向 `void*` 或由 `void*` 转换时，最好用 static_cast。
 
+## enum
+
+> `enum` gives names to a set of integers.
+
+```c++
+enum Example : unsigned char // member will be char
+{
+    A, B, C
+};
+
+Example value = A;
+```
+
+`enum` 有些类似于类，后面是类型名。`value` 只能赋 `Example` 中的值，但是能够与整形值比较。`enum` 中的名字可以赋值给整型变量（毕竟它们也是整数）。`enum` 里面会默认赋值。
+
 ## 函数
 
 ### 默认赋值

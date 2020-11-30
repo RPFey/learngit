@@ -44,7 +44,13 @@ seq.registerCallback(callback);
 
 ### tf2_ros
 
-ros 中一个封装的坐标转换包。以 amcl 中 laserscan 为例(use MessageFilter), 将得到的雷达数据转换到 odom frame 上。
+> tf 中，得到的变换关系是从 `child_frame` --> `parent_frame`, 即
+
+$$
+    P^{parent} = T * P^{child}
+$$
+
+tf2_ros 是 ros 中一个封装的坐标转换包，用以实现 tf tree。以 amcl 中 laserscan 为例(use MessageFilter), 将得到的雷达数据转换到 odom frame 上。
 
 ```c++
 tf_.reset(new tf2_ros::Buffer());

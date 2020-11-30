@@ -69,6 +69,19 @@ output
 
 对于类，会返回有所属性和方法的字典。对于对象，只返回属性和对应值。
 
+* class name
+
+获得所属类名字的字符串 (用于直接判断对象类别，尤其是自定义时)
+
+```python
+class MyClass:
+    def __init__(self):
+        self.a = 1
+
+MyClass a()
+print(a.__class__.__name__)
+```
+
 ## Multiprocessing
 
 采用 Pool/Queue 管理
