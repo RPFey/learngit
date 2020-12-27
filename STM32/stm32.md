@@ -117,6 +117,14 @@ load nuttx    # load binary file
 
 `monitor` 是本地远程发送到芯片的命令。
 
+## Custom Board
+
+这里记录一些见到过的板子和使用时注意事项
+
+### STM32F407G-DISC1
+
+STM32 官方的板子。这个板子有意思地方在于板上集成 了一个 stlink-v2 调试器，不需要自己再购买一个。 `CN3` 控制调试器选择。跳接时，选择板上集成的调试器。否则可以用自己的调试器，直接连接在 GPIO 管脚上。
+
 ## communication
 
 ### UART
@@ -129,7 +137,12 @@ COM 是 PC 上异步串行通信口 RS232
 
 ![UART](./img/UART.png)
 
-开始时保持低电平是为了保证数据线正常。以低电平表示开始传输数据。UART 在接受完成后，将设置标记表示数据可用( 中断处理函数中常作检验 )，并产生一个处理器中断。
+开始时保持低电平是为了保证数据线正常。以低电平表示开始传输数据。UART 在接受完成后，将设置标记表示数据可用( 中断处理函数中常作检验 )，并产生一个处理器中断。使用 `UART` 时会有一个 `Hard Ware Control Flow` 选项，对应是 `RTS` 与 `CTS` 管脚，用以辅助数据传输。相应的在 HAL 库中读取寄存器并与标志比较，判断是否下一次传输。（函数 `UART_WaitOnFlagUntilTimeout` ）在 `minicom` 中同样需要配置`Hardware control flow` 选项。
+
+```plain
+CTS <--->  RTS
+RTS <---> CTS
+```
 
 ### CAN
 

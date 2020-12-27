@@ -97,7 +97,9 @@ RC 与 接收机之间的通信协议，软件驱动在 /src/drivers/linux_sbus 
 ## 启动脚本分析
 
 在 /src/driver/px4io/px4io.cpp  是主处理器对协处理器的操作.下面对应的 update 选项是烧写对应的二进制文件到协处理器中.
+
 ![启动流程](./img/启动流程.png)
+
 在build/px4_fmu-v2_default/NuttX/apps/system/nsh/nsh_main.c
 
 是对 nsh 初始化 --> nsh_console --> nsh_initscript 对 rcS
@@ -265,7 +267,28 @@ px4_add_module(
 
 ### optical flow
 
-类是 PX4FLOW ，继承了I2C 类(这是一个设备类) 。需要配置总线，　地址，　机架相对指南针偏转，　频率，　传感器朝向(distance_sensor_s)
+类是 PX4FLOW ，继承了I2C 类(这是一个设备类) 。需要配置总线，地址，机架相对指南针偏转，频率，传感器朝向(distance_sensor_s)。具体装配信息见[此处](https://docs.px4.io/master/en/sensor/optical_flow.html)
+
+* 源代码解读
+
+光流信息在飞控板上由 `I2C` 接口读入，发布到 `uORB` 话题上，再由 `EKF` 接受分析。实现源代码：
+
+`src/drivers/optical_flow/px4flow/px4flow.cpp`
+
+* 初始化
+
+* 数据转换
+
+文件中 `collect` 函数实现从 `I2C` 设备读入并发布到 `uORB` 话题。从中 
+
+```c++
+int PX4FLOW::collect()
+{
+	// ...
+	_px4flow_topic.publish(report);
+}
+```
+
 
 ## drivers(software) / Modules
 
@@ -315,11 +338,11 @@ int gps_core(int argc, char *argv[]){
 
 ### EKF2
 
-EFK 主函数直接继承　ModuleBase
+EFK 主函数直接继承 `ModuleBase`
 
 ## application
 
-application 的 main 函数命名为 <module_name>_main
+application 的 main 函数命名为 `<module_name>_main`
 
 ```c++
 __EXPORT int simple_main(int argc, char* argv);
@@ -327,7 +350,7 @@ __EXPORT int simple_main(int argc, char* argv);
 
 functions :
 
-PX4_INFO(...)  =  printf(...)
+`PX4_INFO(...) ` 与 `printf` 一样。
 
 ### multi-thread
 
@@ -478,9 +501,9 @@ nav_state : 导航状态 vehicle_state.msg 中 nav_state 决定。无人机会�
 
 角度控制采用串级反馈控制，一级期望角度为输入，二级以期望角速度为输入。二级控制系统对于系统的状态检测更加敏感。
 
-原文件下 control_attitude()  / control_attitude_rate() 控制源码。
+原文件下 `control_attitude()`  / `control_attitude_rate()` 控制源码。
 
-位置控制源码在 /src/modules/mc_pos_control 下
+位置控制源码在 `/src/modules/mc_pos_control` 下
 
 ### bootloader
 
@@ -646,7 +669,7 @@ else {
 }   
 ```
 
-exec()函数族 进程调用另外一个程序，此时子进程死亡，而且各个段均被清除。
+`exec()`函数族 进程调用另外一个程序，此时子进程死亡，而且各个段均被清除。
 
 ```c++
 char command[256];   

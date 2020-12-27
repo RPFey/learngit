@@ -93,11 +93,15 @@ catch (tf2::TransformException& e){
 double angle_min = tf2::getYaw(min_q.quaternion);
 ```
 
-functions in tf2 namespace:
+* functions in tf2 namespace
 
-toMsg() (in, out) 参数时，将tf message 转换成 point(Vector3d)　形式。
+`toMsg()` (in, out) 参数时，将tf message 转换成 point(Vector3d)　形式。
 
-tf2::convert 支持数据格式转换(tf::transform, tf2::quanternion, posestamped)
+`tf2::convert` 支持数据格式转换(tf::transform, tf2::quanternion, posestamped)
+
+* Problem and Bugs
+
+在发布 tf 之前最好等待一小段时间，不然可能发送不到 tf tree 上。
 
 ### cv_bridge
 

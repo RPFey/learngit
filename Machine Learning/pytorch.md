@@ -413,7 +413,7 @@ torch.distributed.new_group 可以将各优先级的进程组建成新组，在�
 
 ## Data preparation
 
-torch.utils.data.Dataset is a abstract class , following methods should be override. `__len__` & `__getitem__` . Typically, the path and txt setup is in `__init__` and image reading is in `__getitem__`。 `collate_fn` parameter in DataSet : this function is called when the batch is gathered (value has been returned by the `__getitem__` method and combined), so the input is a tuple.
+torch.utils.data.Dataset is a abstract class , following methods should be override. `__len__` & `__getitem__` . Typically, the path and txt setup is in `__init__` and image reading is in `__getitem__`。 `collate_fn` parameter in DataSet : this function is called when the batch is gathered (value has been returned by the `__getitem__` method and combined), so the input is a tuple. 主要用途是在数据收集完后，用于处理一批中的数据，再输出。
 
 ```python
 class MyDataSet(Dataset):
@@ -441,6 +441,16 @@ class MyDataSet(Dataset):
 			sample = self.transform(sample)
 		return sample
 ```
+
+* DataLoader
+
+通过阅读源代码可以看出，之前的 `DataSet` 对象在 `DataLoader` 中只是一个属性。
+
+```python
+self.dataset = dataset
+```
+
+通过这个属性访问之前的数据集对象，获得与之有关的信息。
 
 ## Visualization
 

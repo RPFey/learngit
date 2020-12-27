@@ -315,6 +315,18 @@ launch 文件中：
 <param name='....' command="...[执行文件] ...[参数文件]"/>
 
 <!--可执行文件得到参数文件作为参数后返回的值作为 param 的值-->
+```
+
+* 获取相关参数
+
+```c++
+int param;
+ros::NodeHangle nh('~');
+
+nh.getParam("param_name", param);
+```
+
+如果是使用 `bool` 类型值可能会接受不到。
 
 还有一个namespace 的概念 ：
 
@@ -324,7 +336,7 @@ launch 文件中：
 
 \__name:= ...     ;  __ns:=.....
 
-而 ros::NodeHandle nh('~') 代表私有的命名空间
+而 `ros::NodeHandle nh('~')`  代表私有的命名空间
 
 ## action
 
